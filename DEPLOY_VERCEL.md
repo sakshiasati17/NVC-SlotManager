@@ -34,6 +34,8 @@ git push -u origin main
 
 ## 3. Add environment variables in Vercel
 
+**Where to get each value:** see [ENV_VARS.md](./ENV_VARS.md) for step-by-step instructions.
+
 In the project import screen, open **Environment Variables** and add:
 
 | Name | Value | Notes |
@@ -126,3 +128,13 @@ So for **free**, use **Option A** (cron-job.org).
 - **Reminders:** cron-job.org calling `/api/cron/reminders?secret=CRON_SECRET` every 10 minutes.
 
 If something fails, check Vercel’s **Deployments** → **Functions** and **Supabase** logs.
+
+### Troubleshooting
+
+| Problem | Fix |
+|--------|-----|
+| Build fails: "Cannot find module 'resend'" | Ensure `resend` is in `package.json` under `dependencies`. Push and redeploy. |
+| Build fails: TypeScript or lint errors | Run `npm run build` and `npm run lint` locally; fix errors before pushing. |
+| 500 on first load or middleware | Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel env. Redeploy. |
+| Emails not sending | Set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel env. Check Resend dashboard. |
+| Wrong Node version | Project uses `engines.node >= 18`. In Vercel Settings set Node.js to 18.x or 20.x if needed. |
