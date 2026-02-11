@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { format } from "date-fns";
+import { signupConfirmation, waitlistJoined } from "@/lib/email/templates";
+import { sendEmail } from "@/lib/email/send";
 
 const signupSchema = z.object({
   slot_id: z.string().uuid(),
@@ -9,6 +12,7 @@ const signupSchema = z.object({
   participant_name: z.string().optional(),
   participant_phone: z.string().optional(),
   team_id: z.string().uuid().optional(),
+  team_name: z.string().min(1).optional(),
   join_waitlist: z.boolean().optional(),
 });
 
@@ -21,7 +25,20 @@ export async function POST(req: Request) {
   const parsed = signupSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json(parsed.error.flatten(), { status: 400 });
 
-  const { slot_id, event_id, participant_email, participant_name, participant_phone, team_id, join_waitlist } = parsed.data;
+  const { slot_id, event_id, participant_email, participant_name, participant_phone, team_name, join_waitlist } = parsed.data;
+  let { team_id } = parsed.data;
+  if (team_name?.trim() && !team_id) {
+    const { data: existingTeam } = await supabase.from("teams").select("id").eq("event_id", event_id).eq("name", team_name.trim()).maybeSingle();
+    if (existingTeam) team_id = existingTeam.id;
+    else {
+      const { data: newTeam, error: teamErr } = await supabase.from("teams").insert({ event_id, name: team_name.trim() }).select("id").single();
+      if (!teamErr && newTeam) team_id = newTeam.id;
+    }
+  }
+
+  if (!user) {
+    return NextResponse.json({ error: "Sign in to sign up or join the waitlist." }, { status: 401 });
+  }
 
   const { data: slot } = await supabase.from("slots").select("id, capacity").eq("id", slot_id).eq("event_id", event_id).single();
   if (!slot) return NextResponse.json({ error: "Slot not found" }, { status: 404 });
@@ -43,6 +60,18 @@ export async function POST(req: Request) {
         position,
       }).select("id").single();
       if (wlError) return NextResponse.json({ error: wlError.message }, { status: 500 });
+      const { data: eventRow } = await supabase.from("events").select("title, slug").eq("id", event_id).single();
+      const { data: slotRow } = await supabase.from("slots").select("starts_at, ends_at").eq("id", slot_id).single();
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const eventUrl = `${baseUrl}/e/${eventRow?.slug ?? ""}`;
+      const { subject, html } = waitlistJoined({
+        participantName: participant_name ?? undefined,
+        eventTitle: eventRow?.title ?? "Event",
+        slotStart: slotRow ? format(new Date(slotRow.starts_at), "EEE, MMM d 'at' h:mm a") : "",
+        slotEnd: slotRow ? format(new Date(slotRow.ends_at), "h:mm a") : "",
+        eventUrl,
+      });
+      await sendEmail(participant_email, subject, html);
       return NextResponse.json({ waitlist: true, id: wl.id });
     }
     return NextResponse.json({ error: "Slot is already taken" }, { status: 409 });
@@ -67,5 +96,19 @@ export async function POST(req: Request) {
     if (error.code === "23505") return NextResponse.json({ error: "Slot was just taken. Please pick another." }, { status: 409 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const { data: event } = await supabase.from("events").select("title, slug, notify_email").eq("id", event_id).single();
+  const { data: slotRow } = await supabase.from("slots").select("starts_at, ends_at").eq("id", slot_id).single();
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const eventUrl = `${baseUrl}/e/${event?.slug ?? ""}`;
+  const { subject, html } = signupConfirmation({
+    participantName: participant_name ?? undefined,
+    eventTitle: event?.title ?? "Event",
+    slotStart: slotRow ? format(new Date(slotRow.starts_at), "EEE, MMM d 'at' h:mm a") : "",
+    slotEnd: slotRow ? format(new Date(slotRow.ends_at), "h:mm a") : "",
+    eventUrl,
+  });
+  await sendEmail(participant_email, subject, html);
+
   return NextResponse.json(booking);
 }

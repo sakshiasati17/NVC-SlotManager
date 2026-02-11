@@ -5,11 +5,15 @@ import { EventSchedule } from "./event-schedule";
 
 export default async function EventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ slot?: string }>;
 }) {
   const { slug } = await params;
+  const { slot: slotIdFromUrl } = await searchParams;
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { data: event, error: eventError } = await supabase
     .from("events")
@@ -27,7 +31,7 @@ export default async function EventPage({
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("*, team:teams(*)")
+    .select("id, slot_id, event_id, participant_email, participant_name, participant_phone, auth_user_id, status, team:teams(*)")
     .eq("event_id", event.id)
     .eq("status", "confirmed");
 
@@ -65,7 +69,14 @@ export default async function EventPage({
       <main className="max-w-4xl mx-auto px-4 py-8">
         <EventSchedule
           event={{ ...event, slots: slotsWithBooking }}
+          user={user ? { id: user.id, email: user.email ?? undefined } : null}
+          initialSlotId={slotIdFromUrl ?? undefined}
         />
+        {!user && (
+          <p className="mt-8 text-center text-sm text-[var(--muted)]">
+            Have a signup? <a href={`/login?redirect=${encodeURIComponent(`/e/${slug}`)}`} className="text-[var(--accent)] font-medium hover:underline">Sign in</a> to cancel or change it.
+          </p>
+        )}
       </main>
     </div>
   );

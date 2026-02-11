@@ -1,39 +1,101 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { EventWithSlots } from "@/lib/types";
 
-export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }) {
+type User = { id: string; email?: string } | null;
+
+export function EventSchedule({
+  event: initialEvent,
+  user,
+  initialSlotId,
+}: {
+  event: EventWithSlots;
+  user: User;
+  initialSlotId?: string;
+}) {
+  const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
   const [loadingSlotId, setLoadingSlotId] = useState<string | null>(null);
-  const [signupForm, setSignupForm] = useState<{ slotId: string; email: string; name: string; phone: string; joinWaitlist?: boolean } | null>(null);
+  const [signupForm, setSignupForm] = useState<{ slotId: string; email: string; name: string; phone: string; team_name?: string; joinWaitlist?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const showContact = event.show_contact;
 
+  function isOwnBooking(booking: { auth_user_id?: string | null } | null): boolean {
+    if (!user?.id || !booking) return false;
+    return booking.auth_user_id === user.id;
+  }
+
+  function goToLogin(slotId?: string) {
+    const params = new URLSearchParams({ redirect: `/e/${event.slug}` });
+    if (slotId) params.set("slot", slotId);
+    router.push(`/login?${params.toString()}`);
+  }
+
+  useEffect(() => {
+    if (initialSlotId && user?.email && event.slots.some((s) => s.id === initialSlotId) && !signupForm) {
+      setSignupForm({ slotId: initialSlotId, email: user.email, name: "", phone: "" });
+    }
+  }, [initialSlotId, user?.email, event.slots, signupForm]);
+
   async function handleSignup(slotId: string, joinWaitlist?: boolean) {
-    const email = signupForm?.slotId === slotId ? signupForm.email : "";
+    if (!user) {
+      goToLogin(slotId);
+      return;
+    }
+    const email = signupForm?.slotId === slotId ? signupForm.email : user.email ?? "";
     const name = signupForm?.slotId === slotId ? signupForm.name : "";
     const phone = signupForm?.slotId === slotId ? signupForm.phone : "";
     if (!email) {
-      setSignupForm({ slotId, email: "", name, phone, joinWaitlist });
+      setSignupForm({ slotId, email: user.email ?? "", name, phone, joinWaitlist });
       return;
     }
     setLoadingSlotId(slotId);
     setError(null);
     try {
-      const res = await fetch("/api/bookings", {
+      if (joinWaitlist) {
+        const res = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            slot_id: slotId,
+            event_id: event.id,
+            participant_email: email,
+            participant_name: name || undefined,
+            participant_phone: phone || undefined,
+            team_name: signupForm?.team_name?.trim() || undefined,
+            join_waitlist: true,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.error ?? "Signup failed");
+          return;
+        }
+        if (res.status === 401) {
+          setError("Please sign in first.");
+          goToLogin(slotId);
+          return;
+        }
+        setMessage("You're on the waitlist.");
+        setSignupForm(null);
+        await refreshSchedule();
+        return;
+      }
+
+      const res = await fetch(`/api/events/${event.slug}/request-signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slot_id: slotId,
-          event_id: event.id,
           participant_email: email,
           participant_name: name || undefined,
           participant_phone: phone || undefined,
-          join_waitlist: joinWaitlist ?? false,
+          team_name: signupForm?.team_name?.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -41,9 +103,13 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
         setError(data.error ?? "Signup failed");
         return;
       }
-      setMessage(data.waitlist ? "You're on the waitlist." : "You're signed up!");
+      if (res.status === 401) {
+        setError("Please sign in first.");
+        goToLogin(slotId);
+        return;
+      }
+      setMessage(data.message ?? "Check your email — click the link we sent to confirm your signup.");
       setSignupForm(null);
-      await refreshSchedule();
     } finally {
       setLoadingSlotId(null);
     }
@@ -119,7 +185,15 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
                         <p className="text-xs text-[var(--muted)] mt-1">{slot.waitlist_count} on waitlist</p>
                       )}
                       {event.allow_waitlist && (
-                        isFormOpen && signupForm?.joinWaitlist ? (
+                        !user ? (
+                          <button
+                            type="button"
+                            onClick={() => goToLogin(slot.id)}
+                            className="mt-2 rounded-lg border border-[var(--accent)] text-[var(--accent)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--accent-light)] transition-colors"
+                          >
+                            Sign in to join waitlist
+                          </button>
+                        ) : isFormOpen && signupForm?.joinWaitlist ? (
                           <div className="mt-2 flex flex-col gap-2 w-full max-w-xs">
                             <input
                               type="email"
@@ -150,7 +224,7 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setSignupForm({ slotId: slot.id, email: "", name: "", phone: "", joinWaitlist: true })}
+                            onClick={() => setSignupForm({ slotId: slot.id, email: user?.email ?? "", name: "", phone: "", joinWaitlist: true })}
                             className="mt-2 rounded-lg border border-[var(--accent)] text-[var(--accent)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--accent-light)] transition-colors"
                           >
                             Join waitlist
@@ -166,20 +240,32 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
                 <div className="flex flex-wrap gap-2">
                   {booking ? (
                     <>
-                      <button
-                        type="button"
-                        onClick={() => handleCancel(booking.id)}
-                        className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card-border)] transition-colors"
-                      >
-                        Cancel (if yours)
-                      </button>
-                      {event.allow_swap && (
-                        <a
-                          href={`/e/${event.slug}/swap?target=${booking.id}`}
-                          className="rounded-lg border border-[var(--accent)] bg-transparent px-3 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-light)] transition-colors"
+                      {isOwnBooking(booking) && (
+                        <button
+                          type="button"
+                          onClick={() => handleCancel(booking.id)}
+                          className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card-border)] transition-colors"
                         >
-                          Request swap
-                        </a>
+                          Cancel my signup
+                        </button>
+                      )}
+                      {event.allow_swap && (
+                        user ? (
+                          <a
+                            href={`/e/${event.slug}/swap?target=${booking.id}`}
+                            className="rounded-lg border border-[var(--accent)] bg-transparent px-3 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-light)] transition-colors"
+                          >
+                            Request swap
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => goToLogin()}
+                            className="rounded-lg border border-[var(--accent)] bg-transparent px-3 py-2 text-sm font-medium text-[var(--accent)] hover:bg-[var(--accent-light)] transition-colors"
+                          >
+                            Sign in to request swap
+                          </button>
+                        )
                       )}
                     </>
                   ) : (
@@ -187,10 +273,10 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
                       {!isFormOpen ? (
                         <button
                           type="button"
-                          onClick={() => setSignupForm({ slotId: slot.id, email: "", name: "", phone: "" })}
+                          onClick={() => user ? setSignupForm({ slotId: slot.id, email: user.email ?? "", name: "", phone: "", team_name: "" }) : goToLogin(slot.id)}
                           className="rounded-lg bg-[var(--accent)] text-white px-4 py-2 text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
                         >
-                          Sign up
+                          {user ? "Sign up" : "Sign in to sign up"}
                         </button>
                       ) : (
                         <div className="flex flex-col gap-2 w-full sm:w-auto">
@@ -216,6 +302,18 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
                             onChange={(e) => setSignupForm((f) => f ? { ...f, phone: e.target.value } : null)}
                             className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm"
                           />
+                          <input
+                            type="text"
+                            placeholder="Team name (optional)"
+                            value={signupForm.team_name ?? ""}
+                            onChange={(e) => setSignupForm((f) => f ? { ...f, team_name: e.target.value } : null)}
+                            className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm"
+                          />
+                          {!signupForm.joinWaitlist && (
+                            <p className="text-xs text-[var(--muted)]">
+                              We’ll send a confirmation link to your email. Click it to complete your signup.
+                            </p>
+                          )}
                           <div className="flex gap-2">
                             <button
                               type="button"
@@ -223,7 +321,7 @@ export function EventSchedule({ event: initialEvent }: { event: EventWithSlots }
                               disabled={isLoading || !signupForm.email}
                               className="rounded-lg bg-[var(--accent)] text-white px-4 py-2 text-sm font-medium hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
                             >
-                              {isLoading ? "..." : signupForm.joinWaitlist ? "Join waitlist" : "Confirm"}
+                              {isLoading ? "..." : signupForm.joinWaitlist ? "Join waitlist" : "Confirm my email & sign up"}
                             </button>
                             <button
                               type="button"
