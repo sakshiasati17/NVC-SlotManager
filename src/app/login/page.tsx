@@ -12,21 +12,24 @@ export default async function LoginPage({
   const { data: { user } } = await supabase.auth.getUser();
   const { redirect: redirectTo, slot } = await searchParams;
 
-  if (user && redirectTo) {
-    redirect(redirectTo + (slot ? `?slot=${slot}` : ""));
+  if (user) {
+    const dest = redirectTo && redirectTo.startsWith("/")
+      ? redirectTo + (slot ? (redirectTo.includes("?") ? `&slot=${slot}` : `?slot=${slot}`) : "")
+      : "/my-bookings";
+    redirect(dest);
   }
 
   const fullRedirect =
     redirectTo && redirectTo.startsWith("/")
       ? redirectTo + (slot ? (redirectTo.includes("?") ? `&slot=${slot}` : `?slot=${slot}`) : "")
-      : "/";
+      : "/my-bookings";
 
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-[var(--radius)] border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-[var(--shadow-lg)]">
         <h1 className="text-xl font-semibold text-[var(--foreground)] mb-2">Sign in</h1>
         <p className="text-sm text-[var(--muted)] mb-6">
-          We&apos;ll send you a link to sign in. Use it to sign up for a slot or manage your signup.
+          Sign in with Google, Microsoft, or email to sign up for a slot and manage your booking. You’ll only see your own details.
         </p>
         <ParticipantLoginForm redirectTo={fullRedirect} />
         <p className="mt-4 text-center">

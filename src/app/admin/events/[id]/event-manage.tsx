@@ -7,7 +7,7 @@ type Event = { id: string; title: string; slug: string; allow_swap: boolean; all
 type Slot = { id: string; starts_at: string; ends_at: string; label: string | null };
 
 export function EventManage({ event, slots: initialSlots }: { event: Event; slots: Slot[] }) {
-  const [slots, setSlots] = useState(initialSlots);
+  const [slots] = useState(initialSlots);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
   const [auditLog, setAuditLog] = useState<{ action: string; resource_type: string; created_at: string; details: unknown }[]>([]);

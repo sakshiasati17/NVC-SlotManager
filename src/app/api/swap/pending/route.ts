@@ -22,6 +22,10 @@ export async function GET(req: Request) {
   const forMe = filtered.filter((s) => myTargetIds.has(s.target_booking_id));
   if (!forMe.length) return NextResponse.json([]);
 
+  const eventIds = [...new Set(forMe.map((s) => s.event_id))];
+  const { data: events } = await supabase.from("events").select("id, title, slug").in("id", eventIds);
+  const eventById = new Map((events ?? []).map((e) => [e.id, e]));
+
   const allBookingIds = [...new Set(forMe.flatMap((s) => [s.requester_booking_id, s.target_booking_id]))];
   const { data: allBookings } = await supabase.from("bookings").select("id, participant_name, participant_email, slot_id").in("id", allBookingIds);
   const bookingById = new Map((allBookings ?? []).map((b) => [b.id, b]));
@@ -33,6 +37,7 @@ export async function GET(req: Request) {
     slot ? `${new Date(slot.starts_at).toLocaleString()} – ${new Date(slot.ends_at).toLocaleTimeString()}` : "";
 
   const result = forMe.map((s) => {
+    const ev = eventById.get(s.event_id);
     const req = bookingById.get(s.requester_booking_id);
     const tgt = bookingById.get(s.target_booking_id);
     const reqSlot = req ? slotsById.get(req.slot_id) : undefined;
@@ -40,6 +45,8 @@ export async function GET(req: Request) {
     return {
       id: s.id,
       event_id: s.event_id,
+      event_title: ev?.title ?? "Event",
+      event_slug: ev?.slug ?? "",
       created_at: s.created_at,
       requester_name: req?.participant_name || req?.participant_email || "Someone",
       requester_email: req?.participant_email,

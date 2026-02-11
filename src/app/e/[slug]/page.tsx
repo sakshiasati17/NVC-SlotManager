@@ -67,16 +67,19 @@ export default async function EventPage({
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        <p className="text-xs text-[var(--muted)] mb-4">Times are shown in your local timezone.</p>
         <EventSchedule
           event={{ ...event, slots: slotsWithBooking }}
           user={user ? { id: user.id, email: user.email ?? undefined } : null}
           initialSlotId={slotIdFromUrl ?? undefined}
         />
-        {!user && (
-          <p className="mt-8 text-center text-sm text-[var(--muted)]">
-            Have a signup? <a href={`/login?redirect=${encodeURIComponent(`/e/${slug}`)}`} className="text-[var(--accent)] font-medium hover:underline">Sign in</a> to cancel or change it.
-          </p>
-        )}
+        <p className="mt-8 text-center text-sm text-[var(--muted)]">
+          {user ? (
+            <a href="/my-bookings" className="text-[var(--accent)] font-medium hover:underline">My bookings</a>
+          ) : (
+            <>Have a signup? <a href={`/login?redirect=${encodeURIComponent(`/e/${slug}`)}`} className="text-[var(--accent)] font-medium hover:underline">Sign in</a> to cancel or change it.</>
+          )}
+        </p>
       </main>
     </div>
   );

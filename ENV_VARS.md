@@ -86,6 +86,20 @@ So: **CRON_SECRET** = a secret you create once, store in Vercel, and pass as `?s
 
 ---
 
+## 6. SMS reminders (optional – Twilio)
+
+If you want **SMS reminders** in addition to email (24h, 30m, 15m before a slot), set up Twilio and add:
+
+| Variable | Where you get it |
+|----------|------------------|
+| **TWILIO_ACCOUNT_SID** | [Twilio Console](https://console.twilio.com) → Account → API keys & tokens |
+| **TWILIO_AUTH_TOKEN** | Same page (Auth Token) |
+| **TWILIO_FROM_NUMBER** | A Twilio phone number (e.g. +1234567890) from Phone Numbers → Manage → Buy a number |
+
+Participants who enter a **phone number** when signing up will receive reminder SMS at the same times as the email reminders. Leave these unset to use email-only reminders.
+
+---
+
 ## Quick reference
 
 | Variable | Where you get it |
@@ -96,5 +110,6 @@ So: **CRON_SECRET** = a secret you create once, store in Vercel, and pass as `?s
 | **RESEND_API_KEY** | Resend dashboard → API Keys → create and copy key |
 | **EMAIL_FROM** | `Slot Time <onboarding@resend.dev>` for testing, or your domain later |
 | **CRON_SECRET** | You create it (e.g. `openssl rand -hex 24`) and use the same value in Vercel and in the cron URL |
+| **TWILIO_ACCOUNT_SID**, **TWILIO_AUTH_TOKEN**, **TWILIO_FROM_NUMBER** | Optional – Twilio for SMS reminders |
 
 Add all of these in **Vercel → your project → Settings → Environment Variables**, then redeploy.

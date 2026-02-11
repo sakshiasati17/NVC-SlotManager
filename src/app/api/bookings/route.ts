@@ -5,6 +5,44 @@ import { format } from "date-fns";
 import { signupConfirmation, waitlistJoined } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/send";
 
+/** GET: return current user's confirmed bookings for an event (for swap page). */
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const eventId = searchParams.get("event_id");
+  if (!eventId) return NextResponse.json({ error: "event_id required" }, { status: 400 });
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("id, slot_id, participant_name, participant_email")
+    .eq("event_id", eventId)
+    .eq("auth_user_id", user.id)
+    .eq("status", "confirmed");
+
+  if (!bookings?.length) return NextResponse.json([]);
+
+  const slotIds = [...new Set(bookings.map((b) => b.slot_id))];
+  const { data: slots } = await supabase.from("slots").select("id, starts_at, ends_at, label").in("id", slotIds);
+  const slotById = new Map((slots ?? []).map((s) => [s.id, s]));
+
+  const result = bookings.map((b) => {
+    const slot = slotById.get(b.slot_id);
+    return {
+      id: b.id,
+      slot_id: b.slot_id,
+      participant_name: b.participant_name,
+      participant_email: b.participant_email,
+      starts_at: slot?.starts_at,
+      ends_at: slot?.ends_at,
+      label: slot?.label,
+    };
+  });
+  return NextResponse.json(result);
+}
+
 const signupSchema = z.object({
   slot_id: z.string().uuid(),
   event_id: z.string().uuid(),

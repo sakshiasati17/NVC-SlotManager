@@ -12,7 +12,7 @@ type PendingSwap = {
   created_at: string;
 };
 
-export function SwapRequestsForYou({ eventId, eventSlug }: { eventId: string; eventSlug: string }) {
+export function SwapRequestsForYou({ eventId }: { eventId: string; eventSlug: string }) {
   const [list, setList] = useState<PendingSwap[]>([]);
   const [loading, setLoading] = useState(true);
   const [respondingId, setRespondingId] = useState<string | null>(null);

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import type { EventWithSlots } from "@/lib/types";
+import { AddToCalendarLinks } from "@/components/add-to-calendar-links";
 
 type User = { id: string; email?: string } | null;
 
@@ -171,15 +172,21 @@ export function EventSchedule({
                 <div className="flex-1 sm:text-right">
                   {booking ? (
                     <div>
-                      <p className="font-medium text-[var(--foreground)]">
-                        {booking.participant_name || booking.participant_email}
-                        {booking.team?.name && ` (${booking.team.name})`}
-                      </p>
-                      {showContact && (
-                        <p className="text-sm text-[var(--muted)]">
-                          {booking.participant_email}
-                          {booking.participant_phone && ` · ${booking.participant_phone}`}
-                        </p>
+                      {isOwnBooking(booking) ? (
+                        <>
+                          <p className="font-medium text-[var(--foreground)]">
+                            You
+                            {booking.team?.name && ` (${booking.team.name})`}
+                          </p>
+                          {showContact && (
+                            <p className="text-sm text-[var(--muted)]">
+                              {booking.participant_email}
+                              {booking.participant_phone && ` · ${booking.participant_phone}`}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="font-medium text-[var(--muted)]">Taken</p>
                       )}
                       {slot.waitlist_count > 0 && (
                         <p className="text-xs text-[var(--muted)] mt-1">{slot.waitlist_count} on waitlist</p>
@@ -241,13 +248,23 @@ export function EventSchedule({
                   {booking ? (
                     <>
                       {isOwnBooking(booking) && (
-                        <button
-                          type="button"
-                          onClick={() => handleCancel(booking.id)}
-                          className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card-border)] transition-colors"
-                        >
-                          Cancel my signup
-                        </button>
+                        <>
+                          <AddToCalendarLinks
+                            bookingId={booking.id}
+                            eventTitle={event.title}
+                            eventSlug={event.slug}
+                            slotStart={slot.starts_at}
+                            slotEnd={slot.ends_at}
+                            slotLabel={slot.label}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleCancel(booking.id)}
+                            className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card-border)] transition-colors"
+                          >
+                            Cancel my signup
+                          </button>
+                        </>
                       )}
                       {event.allow_swap && (
                         user ? (

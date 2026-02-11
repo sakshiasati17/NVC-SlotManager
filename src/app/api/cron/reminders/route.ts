@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { format } from "date-fns";
 import { reminder } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/send";
+import { sendSms } from "@/lib/sms/send";
 
 const CRON_SECRET = process.env.CRON_SECRET;
 
@@ -38,7 +39,7 @@ export async function GET(req: Request) {
     const slotIds = slots.map((s) => s.id);
     const { data: bookings } = await supabase
       .from("bookings")
-      .select("id, slot_id, event_id, participant_email, participant_name")
+      .select("id, slot_id, event_id, participant_email, participant_name, participant_phone")
       .in("slot_id", slotIds)
       .eq("status", "confirmed");
 
@@ -75,6 +76,10 @@ export async function GET(req: Request) {
         whenLabel,
       });
       const result = await sendEmail(b.participant_email, subject, html);
+      const smsBody = `Reminder (${whenLabel}): ${ev.title ?? "Event"} – ${format(new Date(slot.starts_at), "EEE, MMM d 'at' h:mm a")}. ${eventUrl}`;
+      if (b.participant_phone?.trim()) {
+        await sendSms(b.participant_phone.trim(), smsBody);
+      }
       if (result.ok) {
         await supabase.from("reminder_sent").insert({ booking_id: b.id, reminder_type: type });
         totalSent++;
