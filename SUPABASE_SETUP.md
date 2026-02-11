@@ -20,8 +20,9 @@ Do this **once** for your project: [https://supabase.com/dashboard](https://supa
 2. Click **Providers**.
 3. Click **Email**.
 4. Turn **Enable Email provider** **ON**.
-5. (Optional) Under **Confirm email**, turn it **OFF** if you want magic-link-only login without “confirm your email” first.
+5. (Optional) Under **Confirm email**, turn it **ON** (recommended) so first-time sign-ins get a verification email to confirm the address is real if you want magic-link-only login without “confirm your email” first.
 6. Click **Save**.
+7. **Google / Microsoft (optional):** Under **Providers**, enable **Google** and/or **Azure** (Microsoft/Outlook) with your OAuth client ID and secret from Google Cloud Console or Azure AD. Save.
 
 ---
 
@@ -31,8 +32,9 @@ Do this **once** for your project: [https://supabase.com/dashboard](https://supa
 2. Under **Redirect URLs**, click **Add URL** and add:
    - For local dev: `http://localhost:3000/**`
    - For production (when you deploy): `https://your-domain.com/**`
-3. The app uses an auth callback at `/auth/callback`; the magic link sends users there first, then to the admin page. No extra config needed — just ensure the **site URL** or redirect list includes your app origin.
-4. Click **Save**.
+3. The app callback is `/api/auth/callback`. Ensure your app origin is in the redirect list.
+4. **Session duration:** Under **Authentication** → **Settings** (or **JWT**), default **JWT expiry** is 3600 (1 hour). Admins stay signed in at least that long; increase if you want longer sessions.
+5. Click **Save**.
 
 ---
 
@@ -41,7 +43,7 @@ Do this **once** for your project: [https://supabase.com/dashboard](https://supa
 1. Run your app: `npm run dev`.
 2. Open http://localhost:3000/admin/login.
 3. Enter your email and click “Send magic link”.
-4. Check your email, click the link — you should land on the admin dashboard.
+4. You should land on the admin dashboard and stay signed in (default at least 1 hour).
 5. Create an event and add slots. Then open `/e/your-slug` and test signup.
 
 If anything errors (e.g. in SQL Editor or when logging in), note the exact message and we can fix it.

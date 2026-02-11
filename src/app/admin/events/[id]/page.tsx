@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { EventManage } from "./event-manage";
+import { AdminSignOut } from "../../admin-sign-out";
 
 export default async function AdminEventPage({
   params,
@@ -35,6 +36,7 @@ export default async function AdminEventPage({
           <Link href="/admin" className="text-[var(--foreground)] hover:underline">
             ← Admin
           </Link>
+          <AdminSignOut />
         </div>
       </header>
 

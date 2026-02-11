@@ -133,7 +133,7 @@ If something fails, check Vercel’s **Deployments** → **Functions** and **Sup
 
 | Problem | Fix |
 |--------|-----|
-| Build fails: "Cannot find module 'resend'" | Ensure `resend` is in `package.json` under `dependencies`. Push and redeploy. |
+| Build fails: "Cannot find module 'resend'" | Project has `resend` in `package.json` and `vercel.json` uses `npm ci`. Push, then in Vercel go to **Deployments** → **⋯** on the latest → **Redeploy** and check **Clear cache and redeploy**. |
 | Build fails: TypeScript or lint errors | Run `npm run build` and `npm run lint` locally; fix errors before pushing. |
 | 500 on first load or middleware | Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel env. Redeploy. |
 | Emails not sending | Set `RESEND_API_KEY` and `EMAIL_FROM` in Vercel env. Check Resend dashboard. |

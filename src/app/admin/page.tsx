@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { format } from "date-fns";
 import { AdminEventList } from "./admin-event-list";
+import { AdminSignOut } from "./admin-sign-out";
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -37,7 +37,10 @@ export default async function AdminPage() {
           <Link href="/" className="text-xl font-semibold text-[var(--foreground)]">
             Slot Time
           </Link>
-          <span className="text-sm text-[var(--muted)]">Admin</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-[var(--muted)]">Admin</span>
+            <AdminSignOut />
+          </div>
         </div>
       </header>
 
