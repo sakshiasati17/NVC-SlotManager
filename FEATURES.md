@@ -7,7 +7,7 @@ This document lists every feature we discussed and where it lives in the codebas
 ## 1. Email verification before signup
 
 - **Flow:** Participant signs up → we send a “confirm your email” link → they click it → booking is created.
-- **DB:** `signup_verifications` table; RPCs `get_signup_verification`, `complete_signup_verification` in `supabase/RUN_THIS_IN_SUPABASE.sql`.
+- **DB:** `signup_verifications` table; RPCs `get_signup_verification`, `complete_signup_verification` in `supabase/migrations/004_signup_verifications.sql`.
 - **API:**  
   - `POST /api/events/[slug]/request-signup` – creates verification, sends **confirmSignupEmail**.  
   - `GET /api/events/[slug]/confirm-signup?token=...` – validates token.  
@@ -39,7 +39,7 @@ All templates live in `src/lib/email/templates.ts`; sending in `src/lib/email/se
 
 ## 3. Reminders (24h, 30m, 15m before slot)
 
-- **DB:** `reminder_sent` table (`booking_id`, `reminder_type` `'24h'|'30m'|'15m'`, `sent_at`) in `supabase/RUN_THIS_IN_SUPABASE.sql`.
+- **DB:** `reminder_sent` table (`booking_id`, `reminder_type` `'24h'|'30m'|'15m'`, `sent_at`) in `supabase/migrations/001_initial_schema.sql`.
 - **Cron:** `GET /api/cron/reminders?secret=CRON_SECRET` in `src/app/api/cron/reminders/route.ts`.  
   Uses `REMINDER_WINDOWS` (24h, 30m, 15m); sends `reminder` template with `whenLabel`; inserts into `reminder_sent` so each type is sent once per booking. Call every 5–15 minutes (e.g. cron-job.org).
 - **Template:** `reminder` in `src/lib/email/templates.ts`.

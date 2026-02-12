@@ -4,13 +4,18 @@ Do this **once** for your project: [https://supabase.com/dashboard](https://supa
 
 ---
 
-## Step 1: Run the database migration
+## Step 1: Run the database migrations
 
-1. In the left sidebar click **SQL Editor**.
-2. Click **New query**.
-3. Open the file `supabase/RUN_THIS_IN_SUPABASE.sql` from this repo, copy **all** of its contents, and paste into the query box.
-4. Click **Run** (or press Cmd/Ctrl + Enter).
-5. You should see “Success. No rows returned.” That means the tables, RLS, and swap function are created.
+Run each migration file **in order** in the Supabase **SQL Editor** (New query → paste file contents → Run):
+
+1. `supabase/migrations/001_initial_schema.sql` — tables (events, slots, bookings, waitlist, swap_requests, audit_log, etc.)
+2. `supabase/migrations/002_rls.sql` — RLS policies
+3. `supabase/migrations/003_swap_accept_rpc.sql` — swap accept function
+4. `supabase/migrations/004_add_notify_email.sql` — notify_email column on events
+5. `supabase/migrations/004_signup_verifications.sql` — signup_verifications table and RPCs
+6. `supabase/migrations/005_audit_booking_confirmed_trigger.sql` — trigger for analytics (signup counts)
+
+You should see “Success. No rows returned” (or similar) after each run. That creates the full schema, RLS, and functions.
 
 ---
 
@@ -96,5 +101,3 @@ If anything errors (e.g. in SQL Editor or when logging in), note the exact messa
 This happens when a participant clicks **Confirm my email & sign up** and the `signup_verifications` table was never created (e.g. an older migration was run, or only part of the main SQL).
 
 **Fix:** In Supabase → **SQL Editor** → New query, paste and run the contents of **`supabase/migrations/004_signup_verifications.sql`** from this repo. That creates the table, indexes, RLS, and the `get_signup_verification` / `complete_signup_verification` functions. Then try the signup again.
-
-Alternatively, run the full **`supabase/RUN_THIS_IN_SUPABASE.sql`** script (it includes this table and is safe to re-run).
