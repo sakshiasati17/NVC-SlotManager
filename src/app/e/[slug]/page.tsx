@@ -55,7 +55,7 @@ export default async function EventPage({
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <header className="border-b border-[var(--card-border)] bg-[var(--card)]">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4">
           <h1 className="text-2xl font-bold text-[var(--foreground)]">{event.title}</h1>
           {event.description && (
             <p className="mt-1 text-[var(--muted)]">{event.description}</p>
@@ -69,7 +69,7 @@ export default async function EventPage({
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main id="main" className="max-w-4xl mx-auto px-4 py-6 sm:py-8" tabIndex={-1}>
         <EventSchedule
           event={{ ...event, slots: slotsWithBooking }}
           user={user ? { id: user.id, email: user.email ?? undefined } : null}

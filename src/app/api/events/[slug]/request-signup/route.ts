@@ -12,6 +12,7 @@ const schema = z.object({
   participant_name: z.string().optional(),
   participant_phone: z.string().optional(),
   team_name: z.string().min(1).optional(),
+  remind_1_day: z.boolean().optional(),
 });
 
 export async function POST(
@@ -32,7 +33,7 @@ export async function POST(
     return NextResponse.json(parsed.error.flatten(), { status: 400 });
   }
 
-  const { slot_id, participant_email, participant_name, participant_phone, team_name } = parsed.data;
+  const { slot_id, participant_email, participant_name, participant_phone, team_name, remind_1_day } = parsed.data;
 
   const { data: event, error: eventError } = await supabase
     .from("events")
@@ -100,6 +101,7 @@ export async function POST(
     team_name: team_name?.trim() || null,
     token,
     expires_at: expiresAt.toISOString(),
+    remind_1_day: remind_1_day !== false,
   });
 
   if (insertError) {

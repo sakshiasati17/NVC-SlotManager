@@ -57,6 +57,7 @@ export function EventManage({
   const [duplicateSlot, setDuplicateSlot] = useState<Slot | null>(null);
   const [duplicateNewStart, setDuplicateNewStart] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [analytics, setAnalytics] = useState<{
     signups: number;
     cancels: number;
@@ -327,11 +328,15 @@ export function EventManage({
           <button
             type="button"
             onClick={() => {
-              if (eventUrl) navigator.clipboard.writeText(eventUrl);
+              if (eventUrl) {
+                navigator.clipboard.writeText(eventUrl);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }
             }}
-            className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card)] transition-colors"
+            className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-1.5 text-sm font-medium text-[var(--foreground)] hover:bg-[var(--card)] transition-colors min-h-[36px]"
           >
-            Copy link
+            {linkCopied ? "Copied!" : "Copy booking link"}
           </button>
         </div>
         <div className="mt-4 flex flex-wrap gap-3 text-xs text-[var(--muted)]">

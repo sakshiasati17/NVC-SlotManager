@@ -90,5 +90,9 @@ export async function POST(
     ok: true,
     slug: event?.slug ?? slug,
     message: "You're signed up!",
+    booking_id: result.booking_id,
+    event_title: event?.title ?? "Event",
+    slot_start: slot?.starts_at ?? null,
+    slot_end: slot?.ends_at ?? null,
   });
 }

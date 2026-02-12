@@ -47,8 +47,8 @@ export function signupConfirmation(params: {
     <p>Hi${name},</p>
     <p>Your slot booking is confirmed for <strong>${title}</strong>.</p>
     <p><strong>Your slot:</strong> ${slot}</p>
-    <p>You can cancel or request a swap anytime using the link below.</p>
-    <p><a href="${params.eventUrl}" style="color:#0d9488;font-weight:600">View schedule &amp; manage booking</a></p>
+    <p>Use the link below to view your booking, <strong>cancel</strong> it, or <strong>request a swap</strong> with another participant. You can also go to My bookings from the main site.</p>
+    <p><a href="${params.eventUrl}" style="color:#0d9488;font-weight:600">View schedule &amp; manage booking (cancel / swap)</a></p>
   `;
   return {
     subject: `Booking confirmed: ${params.eventTitle}`,

@@ -20,7 +20,7 @@ export function EventSchedule({
   const router = useRouter();
   const [event, setEvent] = useState(initialEvent);
   const [loadingSlotId, setLoadingSlotId] = useState<string | null>(null);
-  const [signupForm, setSignupForm] = useState<{ slotId: string; email: string; name: string; phone: string; team_name?: string; joinWaitlist?: boolean } | null>(null);
+  const [signupForm, setSignupForm] = useState<{ slotId: string; email: string; name: string; phone: string; team_name?: string; joinWaitlist?: boolean; remind_1_day?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [displayTimeZone, setDisplayTimeZone] = useState(initialEvent.timezone || "");
@@ -40,7 +40,7 @@ export function EventSchedule({
 
   useEffect(() => {
     if (initialSlotId && user?.email && event.slots.some((s) => s.id === initialSlotId) && !signupForm) {
-      setSignupForm({ slotId: initialSlotId, email: user.email, name: "", phone: "" });
+      setSignupForm({ slotId: initialSlotId, email: user.email, name: "", phone: "", remind_1_day: true });
     }
   }, [initialSlotId, user?.email, event.slots, signupForm]);
 
@@ -98,6 +98,7 @@ export function EventSchedule({
           participant_name: name || undefined,
           participant_phone: phone || undefined,
           team_name: signupForm?.team_name?.trim() || undefined,
+          remind_1_day: signupForm?.remind_1_day !== false,
         }),
       });
       const data = await res.json();
@@ -316,7 +317,7 @@ export function EventSchedule({
                       {!isFormOpen ? (
                         <button
                           type="button"
-                          onClick={() => user ? setSignupForm({ slotId: slot.id, email: user.email ?? "", name: "", phone: "", team_name: "" }) : goToLogin(slot.id)}
+                          onClick={() => user ? setSignupForm({ slotId: slot.id, email: user.email ?? "", name: "", phone: "", team_name: "", remind_1_day: true }) : goToLogin(slot.id)}
                           className="rounded-lg bg-[var(--accent)] text-white px-4 py-2 text-sm font-medium hover:bg-[var(--accent-hover)] transition-colors"
                         >
                           {user ? "Sign up" : "Sign in to sign up"}
@@ -356,6 +357,17 @@ export function EventSchedule({
                             <p className="text-xs text-[var(--muted)]">
                               We’ll send a confirmation link to your email. Click it to complete your signup.
                             </p>
+                          )}
+                          {!signupForm.joinWaitlist && (
+                            <label className="flex items-center gap-2 cursor-pointer text-sm text-[var(--foreground)]">
+                              <input
+                                type="checkbox"
+                                checked={signupForm.remind_1_day !== false}
+                                onChange={(e) => setSignupForm((f) => f ? { ...f, remind_1_day: e.target.checked } : null)}
+                                className="rounded border-[var(--card-border)]"
+                              />
+                              Remind me 1 day before
+                            </label>
                           )}
                           <div className="flex gap-2">
                             <button

@@ -37,13 +37,17 @@ export async function GET(req: Request) {
     if (!slots?.length) continue;
 
     const slotIds = slots.map((s) => s.id);
-    const { data: bookings } = await supabase
+    const { data: bookingsRaw } = await supabase
       .from("bookings")
-      .select("id, slot_id, event_id, participant_email, participant_name, participant_phone")
+      .select("id, slot_id, event_id, participant_email, participant_name, participant_phone, remind_1_day")
       .in("slot_id", slotIds)
       .eq("status", "confirmed");
 
-    if (!bookings?.length) continue;
+    const bookings =
+      type === "24h"
+        ? (bookingsRaw ?? []).filter((b) => (b as { remind_1_day?: boolean }).remind_1_day !== false)
+        : bookingsRaw ?? [];
+    if (!bookings.length) continue;
 
     const { data: alreadySent } = await supabase
       .from("reminder_sent")

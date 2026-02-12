@@ -50,7 +50,7 @@ export default async function MyBookingsPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <header className="border-b border-[var(--card-border)] bg-[var(--card)]">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4 flex flex-wrap items-center justify-between gap-2">
           <Link href="/" className="text-xl font-semibold text-[var(--foreground)]">
             Innovation &amp; Entrepreneurship
           </Link>
@@ -61,7 +61,7 @@ export default async function MyBookingsPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main id="main" className="max-w-2xl mx-auto px-4 py-6 sm:py-8" tabIndex={-1}>
         <h1 className="text-2xl font-bold text-[var(--foreground)] mb-2">My bookings</h1>
         <p className="text-sm text-[var(--muted)] mb-6">
           Your confirmed slots. View event to cancel; request a swap to change your slot.
