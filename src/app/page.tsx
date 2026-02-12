@@ -1,6 +1,22 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let isAdmin = false;
+  if (user) {
+    const { data: createdEvents } = await supabase.from("events").select("id").eq("created_by", user.id).limit(1);
+    const { data: roles } = await supabase.from("event_roles").select("event_id").eq("user_id", user.id).limit(1);
+    isAdmin = (createdEvents?.length ?? 0) > 0 || (roles?.length ?? 0) > 0;
+  }
+
+  const { data: events } = await supabase
+    .from("events")
+    .select("id, title, slug")
+    .order("created_at", { ascending: false });
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-[var(--card-border)] bg-[var(--card)]/80 backdrop-blur-sm sticky top-0 z-10">
@@ -9,12 +25,24 @@ export default function HomePage() {
             Slot Time
           </Link>
           <nav className="flex items-center gap-4">
-            <Link
-              href="/admin"
-              className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-            >
-              Admin
-            </Link>
+            {user && (
+              <Link href="/my-bookings" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+                My bookings
+              </Link>
+            )}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+              >
+                Admin
+              </Link>
+            )}
+            {!user && (
+              <Link href="/login" className="text-[var(--muted)] hover:text-[var(--foreground)] transition-colors">
+                Sign in
+              </Link>
+            )}
           </nav>
         </div>
       </header>
@@ -27,16 +55,35 @@ export default function HomePage() {
           <p className="text-lg text-[var(--muted)] mb-10">
             Create events and time slots in seconds. Participants pick a slot, see who’s in each, swap with others, or join the waitlist. No spreadsheets, no chasing.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/admin"
-              className="inline-flex items-center justify-center rounded-[var(--radius)] bg-[var(--accent)] text-white font-medium px-6 py-3 hover:bg-[var(--accent-hover)] transition-colors shadow-[var(--shadow)]"
-            >
-              Create an event
-            </Link>
-            <span className="text-[var(--muted)] self-center">or share your event link with participants</span>
-          </div>
+          {isAdmin ? (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/admin"
+                className="inline-flex items-center justify-center rounded-[var(--radius)] bg-[var(--accent)] text-white font-medium px-6 py-3 hover:bg-[var(--accent-hover)] transition-colors shadow-[var(--shadow)]"
+              >
+                Create an event
+              </Link>
+              <span className="text-[var(--muted)] self-center">or share your event link with participants</span>
+            </div>
+          ) : (
+            <p className="text-[var(--muted)]">Use a shared event link to sign up for a slot, or see open events below.</p>
+          )}
         </div>
+
+        {!isAdmin && events && events.length > 0 && (
+          <section className="max-w-2xl mx-auto mt-12 w-full px-4">
+            <h2 className="text-lg font-semibold text-[var(--foreground)] mb-3">Open events</h2>
+            <ul className="space-y-2 rounded-[var(--radius)] border border-[var(--card-border)] bg-[var(--card)] p-4">
+              {events.map((ev) => (
+                <li key={ev.id}>
+                  <Link href={`/e/${ev.slug}`} className="font-medium text-[var(--accent)] hover:underline">
+                    {ev.title ?? "Event"}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="max-w-4xl mx-auto mt-24 grid sm:grid-cols-3 gap-6 text-left">
           <div className="p-6 rounded-[var(--radius)] bg-[var(--card)] border border-[var(--card-border)] shadow-[var(--shadow)]">

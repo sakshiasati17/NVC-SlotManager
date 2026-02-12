@@ -50,6 +50,14 @@ export async function POST(
     const result = rpcResult as { ok?: boolean; error?: string };
     if (!result?.ok) return NextResponse.json({ error: result.error ?? "Swap failed" }, { status: 400 });
 
+    await supabase.from("audit_log").insert({
+      event_id: swap.event_id,
+      actor_id: user.id,
+      action: "swap_accepted",
+      resource_type: "swap_request",
+      resource_id: id,
+    });
+
     const requesterId = requesterBooking?.auth_user_id;
     const targetId = targetBooking.auth_user_id;
     const { data: newBookings } = requesterId && targetId
@@ -96,6 +104,14 @@ export async function POST(
       .update({ status: "declined", responded_at: new Date().toISOString() })
       .eq("id", id);
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+    await supabase.from("audit_log").insert({
+      event_id: swap.event_id,
+      actor_id: user.id,
+      action: "swap_declined",
+      resource_type: "swap_request",
+      resource_id: id,
+    });
 
     const requesterEmail = requesterBooking?.participant_email?.trim() || null;
     if (requesterEmail && requesterBooking) {

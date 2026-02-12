@@ -67,7 +67,6 @@ export default async function EventPage({
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <p className="text-xs text-[var(--muted)] mb-4">Times are shown in your local timezone.</p>
         <EventSchedule
           event={{ ...event, slots: slotsWithBooking }}
           user={user ? { id: user.id, email: user.email ?? undefined } : null}

@@ -34,7 +34,7 @@ export function MyBookingsList({ list, pastList }: { list: Item[]; pastList?: It
       <div className="rounded-[var(--radius)] border border-[var(--card-border)] bg-[var(--card)] p-8 text-center">
         <p className="text-[var(--muted)]">You have no confirmed bookings.</p>
         <p className="text-sm text-[var(--muted)] mt-2">
-          <Link href="/" className="text-[var(--accent)] hover:underline">Browse events</Link> to sign up for a slot.
+          <Link href="/" className="text-[var(--accent)] hover:underline">See open events</Link> to sign up for a slot.
         </p>
       </div>
     );

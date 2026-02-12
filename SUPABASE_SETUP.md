@@ -26,15 +26,54 @@ Do this **once** for your project: [https://supabase.com/dashboard](https://supa
 
 ---
 
+## Step 2b: Google & Microsoft OAuth on Vercel (production)
+
+If **Sign in with Google** or **Microsoft / Outlook** works on localhost but not on [nvc-slot-manager.vercel.app](https://nvc-slot-manager.vercel.app), do the following.
+
+### Supabase
+
+1. **Authentication** → **URL Configuration**
+2. **Site URL:** Set to `https://nvc-slot-manager.vercel.app` (so Supabase uses your production URL for OAuth redirects).
+3. **Redirect URLs:** Must include `https://nvc-slot-manager.vercel.app/**` (you can keep `http://localhost:3000/**` for local dev).
+4. Save.
+
+### Google Cloud Console
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → your project → **APIs & Services** → **Credentials**.
+2. Open your **OAuth 2.0 Client ID** (Web application) used by Supabase.
+3. Under **Authorized JavaScript origins**, add:
+   - `http://localhost:3000`
+   - `https://nvc-slot-manager.vercel.app`
+4. Under **Authorized redirect URIs**, keep exactly:
+   - `https://<YOUR-SUPABASE-PROJECT-REF>.supabase.co/auth/v1/callback`  
+   (Find your project ref in Supabase → Project Settings → API → Project URL; it’s the subdomain, e.g. `abcdefghijk` in `https://abcdefghijk.supabase.co`.)
+5. Save. Changes can take a few minutes to apply.
+
+### Microsoft Azure (for Outlook / Microsoft sign-in)
+
+1. Go to [Azure Portal](https://portal.azure.com) → **App registrations** → your app used by Supabase.
+2. **Authentication** → under **Web** (or **Single-page application**), add:
+   - **Redirect URI:** `https://<YOUR-SUPABASE-PROJECT-REF>.supabase.co/auth/v1/callback`  
+   (same Supabase callback as above; use the exact value Supabase shows in **Authentication** → **Providers** → **Azure**.)
+3. Under **Implicit grant and hybrid flows**, if you use PKCE you may not need tokens; otherwise ensure **ID tokens** is checked if Supabase requires it.
+4. Save.
+
+### Vercel
+
+- In **Project** → **Settings** → **Environment Variables**, set **NEXT_PUBLIC_APP_URL** = `https://nvc-slot-manager.vercel.app` for **Production**, then redeploy so the app uses this URL for OAuth redirects.
+
+---
+
 ## Step 3: Allow redirect to your app (for magic link)
 
 1. Still under **Authentication**, click **URL Configuration**.
 2. Under **Redirect URLs**, click **Add URL** and add:
    - For local dev: `http://localhost:3000/**`
-   - For production (when you deploy): `https://your-domain.com/**`
-3. The app callback is `/api/auth/callback`. Ensure your app origin is in the redirect list.
-4. **Session duration:** Under **Authentication** → **Settings** (or **JWT**), default **JWT expiry** is 3600 (1 hour). Admins stay signed in at least that long; increase if you want longer sessions.
-5. Click **Save**.
+   - For production (Vercel): `https://nvc-slot-manager.vercel.app/**` (or your Vercel/custom domain, e.g. `https://your-domain.com/**`)
+3. You can have both localhost and production URLs; Supabase will use the one that matches the request.
+4. The app callback is `/api/auth/callback`. Ensure your app origin is in the redirect list.
+5. **Session duration:** Under **Authentication** → **Settings** (or **JWT**), default **JWT expiry** is 3600 (1 hour). Admins stay signed in at least that long; increase if you want longer sessions.
+6. Click **Save**.
 
 ---
 
@@ -47,3 +86,15 @@ Do this **once** for your project: [https://supabase.com/dashboard](https://supa
 5. Create an event and add slots. Then open `/e/your-slug` and test signup.
 
 If anything errors (e.g. in SQL Editor or when logging in), note the exact message and we can fix it.
+
+---
+
+## Troubleshooting
+
+### "Could not find the table 'public.signup_verifications' in the schema cache"
+
+This happens when a participant clicks **Confirm my email & sign up** and the `signup_verifications` table was never created (e.g. an older migration was run, or only part of the main SQL).
+
+**Fix:** In Supabase → **SQL Editor** → New query, paste and run the contents of **`supabase/migrations/004_signup_verifications.sql`** from this repo. That creates the table, indexes, RLS, and the `get_signup_verification` / `complete_signup_verification` functions. Then try the signup again.
+
+Alternatively, run the full **`supabase/RUN_THIS_IN_SUPABASE.sql`** script (it includes this table and is safe to re-run).

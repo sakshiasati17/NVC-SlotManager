@@ -27,12 +27,13 @@ Use the **anon public** key only, not the “service_role” key.
 
 **Your app’s public URL**
 
-- **First deploy:** Use the URL Vercel gives you after deploy, e.g.  
-  `https://your-project-name.vercel.app`  
-  (you’ll see it in the Vercel dashboard after the first successful deploy).
-- **Later:** If you add a custom domain (e.g. `https://slots.yourdomain.com`), set `NEXT_PUBLIC_APP_URL` to that and redeploy.
+- **Local:** `http://localhost:3000` (for `.env.local`).
+- **Production (this project):** `https://nvc-slot-manager.vercel.app` — set this in **Vercel → Settings → Environment Variables** so emails and links point to the live site.
+- **Later:** If you add a custom domain (e.g. `https://slots.yourdomain.com`), set `NEXT_PUBLIC_APP_URL` to that and add it to Supabase redirect URLs, then redeploy.
 
-So: **NEXT_PUBLIC_APP_URL** = the URL where your app is running (Vercel URL or your custom domain).
+**Supabase:** In **Authentication → URL Configuration → Redirect URLs**, include both `http://localhost:3000/**` and `https://nvc-slot-manager.vercel.app/**` (or your production URL) so sign-in works in dev and production.
+
+**Google / Microsoft not working on Vercel?** Set **Site URL** in Supabase to your production URL, and in **Google Cloud Console** (Credentials → your OAuth client) add `https://nvc-slot-manager.vercel.app` to **Authorized JavaScript origins**. In **Azure** (App registration → Authentication), the redirect URI must be your Supabase callback (`https://<project-ref>.supabase.co/auth/v1/callback`). See **SUPABASE_SETUP.md** → “Step 2b: Google & Microsoft OAuth on Vercel” for full steps.
 
 ---
 
@@ -106,7 +107,7 @@ Participants who enter a **phone number** when signing up will receive reminder 
 |----------|------------------|
 | **NEXT_PUBLIC_SUPABASE_URL** | Supabase → Project Settings → API → **Project URL** |
 | **NEXT_PUBLIC_SUPABASE_ANON_KEY** | Supabase → Project Settings → API → **anon public** key |
-| **NEXT_PUBLIC_APP_URL** | Your Vercel app URL (e.g. `https://xxx.vercel.app`) or your custom domain |
+| **NEXT_PUBLIC_APP_URL** | `https://nvc-slot-manager.vercel.app` for production; `http://localhost:3000` for local |
 | **RESEND_API_KEY** | Resend dashboard → API Keys → create and copy key |
 | **EMAIL_FROM** | `Slot Time <onboarding@resend.dev>` for testing, or your domain later |
 | **CRON_SECRET** | You create it (e.g. `openssl rand -hex 24`) and use the same value in Vercel and in the cron URL |

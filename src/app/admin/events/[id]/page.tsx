@@ -28,6 +28,26 @@ export default async function AdminEventPage({
   if (!canManage) notFound();
 
   const { data: slots } = await supabase.from("slots").select("id, starts_at, ends_at, label").eq("event_id", id).order("starts_at");
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("slot_id, participant_name, participant_email")
+    .eq("event_id", id)
+    .eq("status", "confirmed");
+
+  const bookingBySlotId = new Map((bookings ?? []).map((b) => [b.slot_id, b]));
+  const slotsWithStatus = (slots ?? []).map((s) => ({
+    id: s.id,
+    starts_at: s.starts_at,
+    ends_at: s.ends_at,
+    label: s.label,
+    status: bookingBySlotId.has(s.id) ? ("taken" as const) : ("available" as const),
+    participant_name: bookingBySlotId.get(s.id)?.participant_name ?? null,
+    participant_email: bookingBySlotId.get(s.id)?.participant_email ?? null,
+  }));
+
+  const totalSlots = slotsWithStatus.length;
+  const takenCount = slotsWithStatus.filter((s) => s.status === "taken").length;
+  const availableCount = totalSlots - takenCount;
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -41,11 +61,11 @@ export default async function AdminEventPage({
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-[var(--foreground)] mb-2">{event.title}</h1>
-        <p className="text-[var(--muted)] mb-6">
-          Public link: <a href={`/e/${event.slug}`} className="text-[var(--accent)] underline" target="_blank" rel="noopener noreferrer">/e/{event.slug}</a>
-        </p>
-        <EventManage event={event} slots={slots ?? []} />
+        <EventManage
+          event={event}
+          slots={slotsWithStatus}
+          stats={{ total: totalSlots, available: availableCount, taken: takenCount }}
+        />
       </main>
     </div>
   );

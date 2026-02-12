@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const redirectTo = () =>
-  typeof window !== "undefined"
-    ? `${window.location.origin}/api/auth/callback?next=/admin`
-    : "";
+const redirectTo = () => {
+  if (typeof window === "undefined") return "";
+  const origin = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+  return `${origin}/api/auth/callback?next=/admin`;
+};
 
 export function AdminLoginForm() {
   const router = useRouter();

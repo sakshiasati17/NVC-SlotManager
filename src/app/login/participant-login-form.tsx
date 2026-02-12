@@ -7,10 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 export function ParticipantLoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const nextPath = redirectTo.startsWith("/") ? redirectTo : `/${redirectTo}`;
-  const callbackUrl = () =>
-    typeof window !== "undefined"
-      ? `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`
-      : "";
+  const callbackUrl = () => {
+    if (typeof window === "undefined") return "";
+    const origin = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    return `${origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`;
+  };
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

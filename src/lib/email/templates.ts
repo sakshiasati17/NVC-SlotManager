@@ -3,7 +3,7 @@
  * Used with Resend when RESEND_API_KEY and EMAIL_FROM are set.
  */
 
-const wrapHtml = (body: string) =>
+export const wrapHtml = (body: string) =>
   `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font-family:system-ui,-apple-system,sans-serif;line-height:1.6;color:#1e293b;max-width:560px;margin:0 auto;padding:24px">${body}</body></html>`;
 
 function escapeHtml(s: string) {
@@ -267,6 +267,47 @@ export function swapDeclined(params: {
   `;
   return {
     subject: `Swap declined: ${params.eventTitle}`,
+    html: wrapHtml(body),
+  };
+}
+
+/** Replace placeholders in a string. Values are escaped for HTML. */
+export function replacePlaceholders(
+  text: string,
+  replacements: { event_title?: string; event_link?: string; participant_name?: string; participant_email?: string }
+): string {
+  let out = text;
+  if (replacements.event_title !== undefined) out = out.replace(/\{\{event_title\}\}/g, escapeHtml(replacements.event_title));
+  if (replacements.event_link !== undefined) out = out.replace(/\{\{event_link\}\}/g, replacements.event_link);
+  if (replacements.participant_name !== undefined) out = out.replace(/\{\{participant_name\}\}/g, escapeHtml(replacements.participant_name ?? ""));
+  if (replacements.participant_email !== undefined) out = out.replace(/\{\{participant_email\}\}/g, escapeHtml(replacements.participant_email ?? ""));
+  return out;
+}
+
+/** Build HTML from admin-written body (placeholders already replaced). Newlines -> <br>, escape HTML. */
+export function customBodyToHtml(body: string): string {
+  return escapeHtml(body).replace(/\n/g, "<br>");
+}
+
+/** Invite-to-book email: send to a list so they can use the link to book a slot. */
+export function inviteToBookEmail(params: {
+  eventTitle: string;
+  eventUrl: string;
+  customMessage?: string;
+}) {
+  const title = escapeHtml(params.eventTitle);
+  const custom = params.customMessage
+    ? `<p>${escapeHtml(params.customMessage).replace(/\n/g, "<br>")}</p>`
+    : "";
+  const body = `
+    <p>You're invited to book a slot for <strong>${title}</strong>.</p>
+    <p>Use the link below to pick your time and confirm your signup.</p>
+    ${custom}
+    <p><a href="${params.eventUrl}" style="color:#0d9488;font-weight:600">Book your slot</a></p>
+    <p>If you didn't expect this email, you can ignore it.</p>
+  `;
+  return {
+    subject: `Book your slot: ${params.eventTitle}`,
     html: wrapHtml(body),
   };
 }

@@ -41,6 +41,14 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  await supabase.from("audit_log").insert({
+    event_id,
+    actor_id: user.id,
+    action: "swap_requested",
+    resource_type: "swap_request",
+    resource_id: swap.id,
+  });
+
   const { data: event } = await supabase.from("events").select("title, slug").eq("id", event_id).single();
   const { data: reqBooking } = await supabase.from("bookings").select("participant_name, participant_email, slot_id").eq("id", requester_booking_id).single();
   const { data: tgtBooking } = await supabase.from("bookings").select("participant_name, participant_email, slot_id").eq("id", target_booking_id).single();

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import type { EventWithSlots } from "@/lib/types";
 import { AddToCalendarLinks } from "@/components/add-to-calendar-links";
+import { formatSlotTimeInZone, getTimezoneOptionsForEvent, getTimezoneLabel } from "@/lib/format-timezone";
 
 type User = { id: string; email?: string } | null;
 
@@ -23,6 +23,7 @@ export function EventSchedule({
   const [signupForm, setSignupForm] = useState<{ slotId: string; email: string; name: string; phone: string; team_name?: string; joinWaitlist?: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [displayTimeZone, setDisplayTimeZone] = useState(initialEvent.timezone || "");
 
   const showContact = event.show_contact;
 
@@ -150,6 +151,31 @@ export function EventSchedule({
         </div>
       )}
 
+      <div className="space-y-2">
+        {event.timezone && (
+          <p className="text-sm text-[var(--muted)]">
+            The organizer set slots in <strong className="text-[var(--foreground)]">{getTimezoneLabel(event.timezone)}</strong>. Change the dropdown below to see times in your timezone or another.
+          </p>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="event-timezone" className="text-sm text-[var(--muted)]">
+            Show times in:
+          </label>
+          <select
+            id="event-timezone"
+            value={displayTimeZone}
+            onChange={(e) => setDisplayTimeZone(e.target.value)}
+            className="rounded-lg border border-[var(--card-border)] bg-[var(--background)] px-3 py-2 text-sm text-[var(--foreground)]"
+          >
+            {getTimezoneOptionsForEvent(event.timezone).map((opt) => (
+              <option key={opt.value || "local"} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       <ul className="space-y-3" role="list">
         {event.slots.map((slot) => {
           const booking = slot.booking;
@@ -164,7 +190,7 @@ export function EventSchedule({
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4">
                 <div className="min-w-0">
                   <p className="font-medium text-[var(--foreground)]">
-                    {format(new Date(slot.starts_at), "EEE, MMM d")} · {format(new Date(slot.starts_at), "h:mm a")} – {format(new Date(slot.ends_at), "h:mm a")}
+                    {formatSlotTimeInZone(slot.starts_at, slot.ends_at, displayTimeZone)}
                   </p>
                   {slot.label && <p className="text-sm text-[var(--muted)]">{slot.label}</p>}
                 </div>
