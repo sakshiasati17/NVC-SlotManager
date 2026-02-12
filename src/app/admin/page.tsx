@@ -30,13 +30,18 @@ export default async function AdminPage() {
       { onConflict: "email" }
     );
 
-    const notifyTo = process.env.ADMIN_REQUEST_NOTIFY_EMAIL?.trim();
-    if (!existing && notifyTo) {
+    const notifyEmails = (process.env.ADMIN_REQUEST_NOTIFY_EMAIL ?? "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e && e.includes("@"));
+    if (!existing && notifyEmails.length > 0) {
       const { subject, html } = adminAccessRequestNotification({
         requesterEmail: email,
         requesterName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? undefined,
       });
-      await sendEmail(notifyTo, subject, html);
+      for (const to of notifyEmails) {
+        await sendEmail(to, subject, html);
+      }
     }
 
     return (

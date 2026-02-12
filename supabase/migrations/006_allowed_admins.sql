@@ -50,5 +50,10 @@ CREATE POLICY "Admin requests select own" ON admin_access_requests
   FOR SELECT TO authenticated
   USING (lower(email) = lower(auth.jwt() ->> 'email'));
 
--- To seed the first I&E staff admin, run in SQL Editor (replace with real email):
--- INSERT INTO allowed_admins (email) VALUES ('your-ie-staff@colorado.edu') ON CONFLICT (email) DO NOTHING;
+-- Seed allowed admins (safe to re-run). These can use /admin/login without verification.
+INSERT INTO allowed_admins (email) VALUES ('saas9993@colorado.edu') ON CONFLICT (email) DO NOTHING;
+INSERT INTO allowed_admins (email) VALUES ('hickorys@colorado.edu') ON CONFLICT (email) DO NOTHING;
+INSERT INTO allowed_admins (email) VALUES ('Zoe.Unsell@colorado.edu') ON CONFLICT (email) DO NOTHING;
+INSERT INTO allowed_admins (email) VALUES ('Dahni.Austin@colorado.edu') ON CONFLICT (email) DO NOTHING;
+INSERT INTO allowed_admins (email) VALUES ('Leah.Shafer@Colorado.EDU') ON CONFLICT (email) DO NOTHING;
+INSERT INTO allowed_admins (email) VALUES ('Karen.Reid@colorado.edu') ON CONFLICT (email) DO NOTHING;
