@@ -56,7 +56,10 @@ export default async function AdminEventPage({
           <Link href="/admin" className="text-[var(--foreground)] hover:underline">
             ← Admin
           </Link>
-          <AdminSignOut />
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">Participant view</Link>
+            <AdminSignOut />
+          </div>
         </div>
       </header>
 

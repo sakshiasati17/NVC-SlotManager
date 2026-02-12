@@ -314,7 +314,7 @@ export function EventManage({
       {/* Event summary */}
       <section className="rounded-[var(--radius)] border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-sm">
         <h1 className="text-xl font-bold text-[var(--foreground)] mb-1">{event.title}</h1>
-        <p className="text-sm text-[var(--muted)] mb-4">Share this link with participants so they can sign up.</p>
+        <p className="text-sm text-[var(--muted)] mb-4">Share this link only with participants for this event. They will only see this event and its slots, and can sign in to book, cancel, or request a swap.</p>
         <div className="flex flex-wrap items-center gap-2">
           <a
             href={`/e/${event.slug}`}

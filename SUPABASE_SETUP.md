@@ -14,8 +14,12 @@ Run each migration file **in order** in the Supabase **SQL Editor** (New query �
 4. `supabase/migrations/004_add_notify_email.sql` — notify_email column on events
 5. `supabase/migrations/004_signup_verifications.sql` — signup_verifications table and RPCs
 6. `supabase/migrations/005_audit_booking_confirmed_trigger.sql` — trigger for analytics (signup counts)
+7. `supabase/migrations/006_allowed_admins.sql` — restrict admin access to I&amp;E staff (allowed_admins + admin_access_requests)
 
 You should see “Success. No rows returned” (or similar) after each run. That creates the full schema, RLS, and functions.
+
+**After running 006:** Add at least one I&amp;E staff email so someone can use admin. In SQL Editor run (replace with real email):  
+`INSERT INTO allowed_admins (email) VALUES ('your-ie-staff@colorado.edu') ON CONFLICT (email) DO NOTHING;`
 
 ---
 

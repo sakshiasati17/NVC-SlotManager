@@ -10,7 +10,7 @@ function AuthCallbackInner() {
   const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
 
   useEffect(() => {
-    const next = searchParams.get("next") ?? "/admin";
+    const next = searchParams.get("next") ?? "/";
     const code = searchParams.get("code");
 
     if (code) {
@@ -24,7 +24,7 @@ function AuthCallbackInner() {
         router.replace(next);
         setStatus("done");
       } else {
-        router.replace("/admin/login");
+        router.replace("/login");
         setStatus("done");
       }
     });

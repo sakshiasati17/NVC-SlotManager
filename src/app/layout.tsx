@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Slot Time — Smart signups, swaps & waitlists",
-  description: "Create events, share one link. Participants sign up, swap slots, join waitlists. No spreadsheets.",
+  title: "Innovation & Entrepreneurship | CU Boulder",
+  description: "Start your innovation journey. Connect with programs, resources and events to turn your ideas into impactful ventures at CU Boulder.",
 };
 
 export default function RootLayout({

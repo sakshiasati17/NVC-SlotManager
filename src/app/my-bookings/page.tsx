@@ -52,7 +52,7 @@ export default async function MyBookingsPage() {
       <header className="border-b border-[var(--card-border)] bg-[var(--card)]">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="text-xl font-semibold text-[var(--foreground)]">
-            Slot Time
+            Innovation &amp; Entrepreneurship
           </Link>
           <div className="flex items-center gap-4">
             <span className="text-sm text-[var(--muted)]">My bookings</span>

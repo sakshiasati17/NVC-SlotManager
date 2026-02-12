@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isAllowedAdmin } from "@/lib/admin-access";
 
 const createEventSchema = z.object({
   title: z.string().min(1),
@@ -29,6 +30,14 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { allowed } = await isAllowedAdmin();
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Admin access is restricted to I&E staff. Your request has been sent for approval." },
+      { status: 403 }
+    );
+  }
 
   const body = await req.json();
   const parsed = createEventSchema.safeParse(body);

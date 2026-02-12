@@ -87,7 +87,19 @@ So: **CRON_SECRET** = a secret you create once, store in Vercel, and pass as `?s
 
 ---
 
-## 6. SMS reminders (optional – Twilio)
+## 6. ADMIN_REQUEST_NOTIFY_EMAIL (admin access requests)
+
+**I&E staff email that receives “someone requested admin access” notifications**
+
+- When a user who is **not** in the allowed-admins list signs in at **Admin sign in**, the app records their request and sends one email to this address.
+- The email includes the requester’s email and instructions to grant access (add the email to the `allowed_admins` table in Supabase).
+- Set this to the Innovation &amp; Entrepreneurship staff address (e.g. `innovate@colorado.edu` or a shared inbox). If unset, requests are still recorded but no email is sent.
+
+So: **ADMIN_REQUEST_NOTIFY_EMAIL** = email address where I&E staff receive admin access requests.
+
+---
+
+## 7. SMS reminders (optional – Twilio)
 
 If you want **SMS reminders** in addition to email (24h, 30m, 15m before a slot), set up Twilio and add:
 
@@ -111,6 +123,7 @@ Participants who enter a **phone number** when signing up will receive reminder 
 | **RESEND_API_KEY** | Resend dashboard → API Keys → create and copy key |
 | **EMAIL_FROM** | `Slot Time <onboarding@resend.dev>` for testing, or your domain later |
 | **CRON_SECRET** | You create it (e.g. `openssl rand -hex 24`) and use the same value in Vercel and in the cron URL |
+| **ADMIN_REQUEST_NOTIFY_EMAIL** | I&E staff email to receive admin access requests (optional but recommended) |
 | **TWILIO_ACCOUNT_SID**, **TWILIO_AUTH_TOKEN**, **TWILIO_FROM_NUMBER** | Optional – Twilio for SMS reminders |
 
 Add all of these in **Vercel → your project → Settings → Environment Variables**, then redeploy.

@@ -311,3 +311,20 @@ export function inviteToBookEmail(params: {
     html: wrapHtml(body),
   };
 }
+
+/** Notify I&E staff that someone requested admin access. */
+export function adminAccessRequestNotification(params: { requesterEmail: string; requesterName?: string }) {
+  const email = escapeHtml(params.requesterEmail);
+  const name = params.requesterName?.trim() ? escapeHtml(params.requesterName) : email;
+  const body = `
+    <p>Someone requested access to the Innovation &amp; Entrepreneurship admin (event/slot management).</p>
+    <p><strong>Email:</strong> ${email}<br><strong>Name:</strong> ${name}</p>
+    <p>To grant access, add this email to the <code>allowed_admins</code> table in Supabase (SQL Editor):</p>
+    <p><code>INSERT INTO allowed_admins (email) VALUES ('${email}') ON CONFLICT (email) DO NOTHING;</code></p>
+    <p>After that, they can sign in at Admin sign in and create/manage events.</p>
+  `;
+  return {
+    subject: `Admin access requested: ${params.requesterEmail}`,
+    html: wrapHtml(body),
+  };
+}

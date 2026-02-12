@@ -63,6 +63,9 @@ export default async function EventPage({
           <p className="mt-2 text-sm text-[var(--muted)]">
             {event.starts_at && format(new Date(event.starts_at), "EEEE, MMM d, yyyy")}
           </p>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Sign in to book a slot, cancel your booking, or request a swap. You only see this event and your slots.
+          </p>
         </div>
       </header>
 

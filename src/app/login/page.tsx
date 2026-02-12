@@ -27,9 +27,9 @@ export default async function LoginPage({
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-[var(--radius)] border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-[var(--shadow-lg)]">
-        <h1 className="text-xl font-semibold text-[var(--foreground)] mb-2">Sign in</h1>
+        <h1 className="text-xl font-semibold text-[var(--foreground)] mb-2">Sign in / Sign up</h1>
         <p className="text-sm text-[var(--muted)] mb-6">
-          Sign in with Google, Microsoft, or email to sign up for a slot and manage your booking. You’ll only see your own details.
+          Anyone can sign in or create an account to book event slots and manage their bookings. Use Google, Microsoft, or email. You’ll only see your own details.
         </p>
         <ParticipantLoginForm redirectTo={fullRedirect} />
         <p className="mt-4 text-center">
