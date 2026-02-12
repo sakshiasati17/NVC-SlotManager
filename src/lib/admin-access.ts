@@ -27,3 +27,17 @@ export async function isAllowedAdmin(): Promise<{ allowed: boolean; email: strin
 
   return { allowed: false, email: user.email };
 }
+
+/**
+ * Check if the current user can manage a specific event.
+ * True if: (1) they are in allowed_admins (staff), OR (2) they created the event, OR (3) they have admin/coordinator role on the event.
+ */
+export async function canManageEvent(supabase: Awaited<ReturnType<typeof createClient>>, eventId: string, userId: string): Promise<boolean> {
+  const { allowed } = await isAllowedAdmin();
+  if (allowed) return true;
+  const { data: event } = await supabase.from("events").select("created_by").eq("id", eventId).single();
+  if (!event) return false;
+  if (event.created_by === userId) return true;
+  const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", eventId).eq("user_id", userId).maybeSingle();
+  return !!(role && (role.role === "admin" || role.role === "coordinator"));
+}

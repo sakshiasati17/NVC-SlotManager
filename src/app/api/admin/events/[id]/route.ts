@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isAllowedAdmin } from "@/lib/admin-access";
 
 const updateSchema = z.object({
   notify_email: z.string().email().optional().or(z.literal("")),
@@ -15,11 +16,12 @@ export async function PATCH(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
   const { data: event } = await supabase.from("events").select("id, created_by").eq("id", id).single();
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
   const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", id).eq("user_id", user.id).maybeSingle();
-  const canManage = event.created_by === user.id || (role && (role.role === "admin" || role.role === "coordinator"));
+  const canManage = isStaffAdmin || event.created_by === user.id || (role && (role.role === "admin" || role.role === "coordinator"));
   if (!canManage) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
   const body = await req.json();
@@ -42,11 +44,12 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
   const { data: event } = await supabase.from("events").select("id, created_by").eq("id", id).single();
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
   const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", id).eq("user_id", user.id).maybeSingle();
-  const canManage = event.created_by === user.id || (role && (role.role === "admin" || role.role === "coordinator"));
+  const canManage = isStaffAdmin || event.created_by === user.id || (role && (role.role === "admin" || role.role === "coordinator"));
   if (!canManage) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
   const { error: deleteError } = await supabase.from("events").delete().eq("id", id);

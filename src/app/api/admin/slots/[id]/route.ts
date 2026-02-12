@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { format } from "date-fns";
+import { isAllowedAdmin } from "@/lib/admin-access";
 import { bookingCancelled } from "@/lib/email/templates";
 import { sendEmail } from "@/lib/email/send";
 
@@ -37,8 +38,11 @@ export async function PATCH(
     .single();
   if (slotErr || !slot) return NextResponse.json({ error: "Slot not found" }, { status: 404 });
 
-  const auth = await checkSlotAuth(supabase, slotId, slot.event_id, user.id);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 403 });
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
+  if (!isStaffAdmin) {
+    const auth = await checkSlotAuth(supabase, slotId, slot.event_id, user.id);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
 
   const body = await req.json();
   const parsed = updateSlotSchema.safeParse(body);
@@ -80,11 +84,13 @@ export async function DELETE(
 
   if (slotErr || !slot) return NextResponse.json({ error: "Slot not found" }, { status: 404 });
 
-  const { data: event } = await supabase.from("events").select("created_by, title, slug").eq("id", slot.event_id).single();
-  const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", slot.event_id).eq("user_id", user.id).maybeSingle();
-  const isOwner = event?.created_by === user.id;
-  const isAdmin = role && (role.role === "admin" || role.role === "coordinator");
-  if (!isOwner && !isAdmin) return NextResponse.json({ error: "Not authorized to manage this event" }, { status: 403 });
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
+  if (!isStaffAdmin) {
+    const auth = await checkSlotAuth(supabase, slotId, slot.event_id, user.id);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 403 });
+  }
+
+  const { data: event } = await supabase.from("events").select("title, slug").eq("id", slot.event_id).single();
 
   const { data: booking } = await supabase.from("bookings").select("id, participant_email, participant_name").eq("slot_id", slotId).eq("status", "confirmed").maybeSingle();
   if (booking) {

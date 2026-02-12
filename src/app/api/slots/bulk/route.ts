@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addMinutes, parseISO } from "date-fns";
+import { isAllowedAdmin } from "@/lib/admin-access";
 
 const bulkSlotsSchema = z.object({
   event_id: z.string().uuid(),
@@ -24,12 +25,13 @@ export async function POST(req: Request) {
   const startDate = parseISO(start);
   const endDate = parseISO(end);
 
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
   const { data: event } = await supabase.from("events").select("id, created_by").eq("id", event_id).single();
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
   const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", event_id).eq("user_id", user.id).maybeSingle();
   const isOwner = event.created_by === user.id;
-  if (!isOwner && (!role || (role.role !== "admin" && role.role !== "coordinator"))) {
+  if (!isStaffAdmin && !isOwner && (!role || (role.role !== "admin" && role.role !== "coordinator"))) {
     return NextResponse.json({ error: "Not authorized to manage this event" }, { status: 403 });
   }
 

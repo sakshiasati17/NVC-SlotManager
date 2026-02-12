@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { format } from "date-fns";
+import { isAllowedAdmin } from "@/lib/admin-access";
 
 export async function GET(
   _req: Request,
@@ -14,9 +15,10 @@ export async function GET(
   const { data: event } = await supabase.from("events").select("id, title, created_by").eq("id", eventId).single();
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
   const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", eventId).eq("user_id", user.id).maybeSingle();
   const isOwner = event.created_by === user.id;
-  if (!isOwner && (!role || (role.role !== "admin" && role.role !== "coordinator"))) {
+  if (!isStaffAdmin && !isOwner && (!role || (role.role !== "admin" && role.role !== "coordinator"))) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 

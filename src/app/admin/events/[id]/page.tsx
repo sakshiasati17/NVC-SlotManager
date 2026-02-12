@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { isAllowedAdmin } from "@/lib/admin-access";
 import { EventManage } from "./event-manage";
 import { AdminSignOut } from "../../admin-sign-out";
 
@@ -14,6 +15,8 @@ export default async function AdminEventPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) notFound();
 
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
+
   const { data: event, error } = await supabase
     .from("events")
     .select("*")
@@ -24,7 +27,7 @@ export default async function AdminEventPage({
 
   const { data: role } = await supabase.from("event_roles").select("role").eq("event_id", id).eq("user_id", user.id).maybeSingle();
   const isOwner = event.created_by === user.id;
-  const canManage = isOwner || (role && (role.role === "admin" || role.role === "coordinator"));
+  const canManage = isStaffAdmin || isOwner || (role && (role.role === "admin" || role.role === "coordinator"));
   if (!canManage) notFound();
 
   const { data: slots } = await supabase.from("slots").select("id, starts_at, ends_at, label").eq("event_id", id).order("starts_at");

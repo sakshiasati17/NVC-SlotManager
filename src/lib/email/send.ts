@@ -4,6 +4,8 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   if (!process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV === "development") {
       console.warn("[Email] RESEND_API_KEY not set – notifications are disabled. Add it to .env.local to enable emails.");
+    } else {
+      console.warn("[Email] RESEND_API_KEY not set in production – notification not sent. Add RESEND_API_KEY in Vercel → Settings → Environment Variables.");
     }
     return { ok: true };
   }

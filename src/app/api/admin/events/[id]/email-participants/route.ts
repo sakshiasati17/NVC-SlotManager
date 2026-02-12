@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sendEmail } from "@/lib/email/send";
+import { isAllowedAdmin } from "@/lib/admin-access";
 import {
   replacePlaceholders,
   customBodyToHtml,
@@ -44,8 +45,9 @@ export async function POST(
     .eq("event_id", eventId)
     .eq("user_id", user.id)
     .maybeSingle();
+  const { allowed: isStaffAdmin } = await isAllowedAdmin();
   const isOwner = event.created_by === user.id;
-  if (!isOwner && (!role || (role.role !== "admin" && role.role !== "coordinator"))) {
+  if (!isStaffAdmin && !isOwner && (!role || (role.role !== "admin" && role.role !== "coordinator"))) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
   }
 

@@ -73,23 +73,10 @@ export default async function AdminPage() {
     );
   }
 
-  const { data: myEvents } = await supabase
+  const { data: events } = await supabase
     .from("events")
     .select("id, title, slug, starts_at, created_at")
-    .eq("created_by", user.id)
     .order("created_at", { ascending: false });
-
-  const { data: roles } = await supabase
-    .from("event_roles")
-    .select("event_id")
-    .eq("user_id", user.id);
-  const otherIds = (roles ?? []).map((r) => r.event_id).filter(Boolean);
-  const { data: otherEvents } = otherIds.length
-    ? await supabase.from("events").select("id, title, slug, starts_at, created_at").in("id", otherIds)
-    : { data: [] };
-  const events = [...(myEvents ?? []), ...(otherEvents ?? [])].filter(
-    (e, i, a) => a.findIndex((x) => x.id === e.id) === i
-  ).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -107,7 +94,7 @@ export default async function AdminPage() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-[var(--foreground)] mb-6">Your events</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)] mb-6">All events</h1>
         <AdminEventList events={events ?? []} />
       </main>
     </div>
