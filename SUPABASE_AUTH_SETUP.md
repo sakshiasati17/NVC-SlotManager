@@ -2,6 +2,57 @@
 
 If **nobody can log in or sign up** (email/password, Google, or Microsoft), work through this list. Auth is handled by Supabase; the app only sends the right URLs and shows errors.
 
+---
+
+### Do this first (Google/Microsoft “no code” or not redirecting)
+
+1. Open your app (production or preview URL) and click **Google** or **Microsoft**.
+2. If you get “No sign-in code received”, you’ll see a page that shows the **exact URL** to add (e.g. `https://nvc-slot-manager.vercel.app/**` or your preview URL + `/**`). Copy it.
+3. In **Supabase Dashboard** go to **Authentication** → **URL Configuration** → **Redirect URLs**.
+4. Click **Add URL**, paste the copied value (e.g. `https://nvc-slot-manager.vercel.app/**`), then **Save**.
+5. Try Google/Microsoft again (use an incognito window if it still fails).
+
+**Preview URL must end with `/**`:** If you added the preview URL without the wildcard (e.g. only `https://nvc-slot-manager-h6j0vbwv7-sakshis-projects-470ddd6f.vercel.app`), add it again as `https://nvc-slot-manager-h6j0vbwv7-sakshis-projects-470ddd6f.vercel.app/**` and Save. Supabase must allow the callback path, not just the origin.
+
+The app now uses the **URL you’re actually on** for the redirect, so you must add that exact origin to Redirect URLs (production and each preview URL you use).
+
+---
+
+
+### Still not working? Do these in order
+
+1. **Enable Google and Microsoft in Supabase**
+   **Supabase Dashboard → Authentication → Providers.**
+   - Open **Google**. Turn it **ON**. Paste **Client ID** and **Client Secret** from Google Cloud Console (APIs & Services → Credentials → your OAuth 2.0 client). Save.
+   - Open **Microsoft**. Turn it **ON**. Paste **Application (client) ID** and **Client secret** from Azure (App registration → Overview + Certificates & secrets). Save.
+   If these are off or missing, Google/Microsoft sign-in will never work.
+
+2. **Redirect URLs in Supabase**
+   **Authentication → URL Configuration → Redirect URLs.**
+   You must have (with `/**` at the end):
+   `https://nvc-slot-manager.vercel.app/**`
+   If you use a preview URL, also add e.g. `https://nvc-slot-manager-h6j0vbwv7-sakshis-projects-470ddd6f.vercel.app/**`.
+   Click **Save**.
+
+3. **Google Cloud Console**
+   - **Authorized JavaScript origins:** `https://nvc-slot-manager.vercel.app` (and preview origin if you use it).
+   - **Authorized redirect URIs:** `https://fhlzgujyubayabaechsc.supabase.co/auth/v1/callback` (Supabase only).
+
+4. **Azure (Microsoft)**
+   - **Redirect URI (Web):** `https://fhlzgujyubayabaechsc.supabase.co/auth/v1/callback`.
+
+5. **Redeploy** in Vercel after any env or code change.
+
+6. **Test in incognito** – open a private window, go to your app, try Google or Microsoft. If it still fails, try **email + password** once. If email works but Google/Microsoft don't, the issue is only the provider (Supabase providers or Google/Azure config).
+
+7. **Vercel logs** – after a failed sign-in, check Vercel → Logs for `[Auth]` or Supabase errors.
+
+**Why it’s not working – quick checks:**
+1. **Same URL everywhere** – You must use the **exact same** URL you’re visiting (e.g. `https://nvc-slot-manager.vercel.app`) in: Vercel **NEXT_PUBLIC_APP_URL**, Supabase **Site URL**, and Supabase **Redirect URLs** (`https://nvc-slot-manager.vercel.app/**`). If you’re on a **preview** URL (e.g. `...-sakshis-projects-....vercel.app`), that full URL must be in Redirect URLs and you can’t rely on production env.
+2. **Redirect URLs** – Supabase → Authentication → URL Configuration → Redirect URLs must include your app’s base + `/**` (e.g. `https://nvc-slot-manager.vercel.app/**`). Without this, Google/Microsoft send users back without a code or the code exchange fails.
+3. **Redeploy** – After changing env vars in Vercel, trigger a new deploy so the build has the latest values.
+4. **Email provider** – Supabase → Authentication → Providers → Email must be **enabled** for signup and email/password login.
+
 **If both login and signup fail:** Usually the app cannot reach Supabase or the keys are wrong. Check **§1** (Vercel env vars) and **§8** (Email provider enabled) first.
 
 ---
@@ -35,11 +86,7 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
    ```text
    https://nvc-slot-manager.vercel.app/**
    ```
-   The app uses the client page `/auth/callback` (so the code can be read from the URL even when Supabase puts it in the hash). So this URL must be allowed:
-   ```text
-   https://nvc-slot-manager.vercel.app/auth/callback
-   ```
-   Also keep localhost if you use it:
+   The app uses the **client** callback `/auth/callback` (reads code from query or hash). The wildcard `/**` above covers it. Also keep localhost if you use it:
    ```text
    http://localhost:3000/**
    ```

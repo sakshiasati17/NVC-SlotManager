@@ -10,7 +10,8 @@ export function ParticipantLoginForm({ redirectTo }: { redirectTo: string }) {
   const nextPath = redirectTo.startsWith("/") ? redirectTo : `/${redirectTo}`;
   const callbackUrl = () => {
     if (typeof window === "undefined") return "";
-    const origin = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const origin = window.location.origin;
+    // Client callback reads code from query OR hash (Supabase may use either).
     return `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
   };
 
@@ -29,7 +30,11 @@ export function ParticipantLoginForm({ redirectTo }: { redirectTo: string }) {
     if (err === "signin_failed") {
       setError("Sign-in with Google or Microsoft did not complete. Try again or use email/password / magic link.");
     } else if (err === "no_code") {
-      setError("Google or Microsoft sent you back without a sign-in code. Add your app’s callback URL to Supabase → Authentication → URL Configuration → Redirect URLs (e.g. https://nvc-slot-manager.vercel.app/**). See SUPABASE_AUTH_SETUP.md.");
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const redirectHint = origin
+        ? `Add this URL in Supabase → Authentication → URL Configuration → Redirect URLs: ${origin}/**`
+        : "Add your app URL (e.g. https://nvc-slot-manager.vercel.app/**) to Redirect URLs.";
+      setError(`No sign-in code received. ${redirectHint} See SUPABASE_AUTH_SETUP.md.`);
     } else if (err === "config") {
       setError("Auth is not configured for this site. Please contact the administrator.");
     }

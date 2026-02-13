@@ -9,7 +9,8 @@ export async function GET(request: Request) {
 
   if (!code) {
     const base = new URL(request.url).origin;
-    const url = new URL("/login", base);
+    const to = next.startsWith("/admin") ? "/admin/login" : "/login";
+    const url = new URL(to, base);
     url.searchParams.set("error", "no_code");
     return NextResponse.redirect(url);
   }
