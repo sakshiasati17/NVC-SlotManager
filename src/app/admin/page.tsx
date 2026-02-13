@@ -34,13 +34,15 @@ export default async function AdminPage() {
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter((e) => e && e.includes("@"));
+    let emailSent = false;
     if (!existing && notifyEmails.length > 0) {
       const { subject, html } = adminAccessRequestNotification({
         requesterEmail: email,
         requesterName: user.user_metadata?.full_name ?? user.user_metadata?.name ?? undefined,
       });
       for (const to of notifyEmails) {
-        await sendEmail(to, subject, html);
+        const result = await sendEmail(to, subject, html);
+        if (result.ok) emailSent = true;
       }
     }
 
@@ -51,6 +53,11 @@ export default async function AdminPage() {
           <p className="text-sm text-[var(--muted)] mb-6">
             Your request for admin access has been sent to the Innovation &amp; Entrepreneurship staff. They will review it and grant access if appropriate. You will not be able to create or manage events until then.
           </p>
+          {(!emailSent || notifyEmails.length === 0) && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-6">
+              If staff did not receive an email, ensure <strong>ADMIN_REQUEST_NOTIFY_EMAIL</strong> and <strong>RESEND_API_KEY</strong> are set in Vercel (Production) and see ENV_VARS.md.
+            </p>
+          )}
           <div className="flex flex-wrap gap-3 justify-center">
             <Link
               href="/"

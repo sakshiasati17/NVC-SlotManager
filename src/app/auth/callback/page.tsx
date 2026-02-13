@@ -4,6 +4,13 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+/** Parse code from URL hash (Supabase sometimes puts code in fragment so server never sees it). */
+function getCodeFromHash(): string | null {
+  if (typeof window === "undefined" || !window.location.hash) return null;
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return params.get("code");
+}
+
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -11,10 +18,22 @@ function AuthCallbackInner() {
 
   useEffect(() => {
     const next = searchParams.get("next") ?? "/";
-    const code = searchParams.get("code");
+    const codeFromQuery = searchParams.get("code");
+    const codeFromHash = getCodeFromHash();
+    const code = codeFromQuery || codeFromHash;
 
     if (code) {
-      window.location.href = `/api/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`;
+      const supabase = createClient();
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          const to = next.startsWith("/admin") ? "/admin/login" : "/login";
+          router.replace(`${to}?error=signin_failed`);
+          setStatus("done");
+        } else {
+          router.replace(next);
+          setStatus("done");
+        }
+      });
       return;
     }
 
@@ -24,7 +43,8 @@ function AuthCallbackInner() {
         router.replace(next);
         setStatus("done");
       } else {
-        router.replace("/login");
+        const to = next.startsWith("/admin") ? "/admin/login" : "/login";
+        router.replace(`${to}?error=no_code`);
         setStatus("done");
       }
     });

@@ -7,7 +7,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
     } else {
       console.warn("[Email] RESEND_API_KEY not set in production – notification not sent. Add RESEND_API_KEY in Vercel → Settings → Environment Variables.");
     }
-    return { ok: true };
+    return { ok: false, error: "RESEND_API_KEY not set" };
   }
   try {
     const { Resend } = await import("resend");

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 const redirectTo = () => {
   if (typeof window === "undefined") return "";
   const origin = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-  return `${origin}/api/auth/callback?next=/admin`;
+  return `${origin}/auth/callback?next=/admin`;
 };
 
 export function AdminLoginForm() {
@@ -27,7 +27,9 @@ export function AdminLoginForm() {
     const err = searchParams.get("error");
     if (err === "signin_failed") {
       setError("Sign-in with Google or Microsoft did not complete. Check Supabase redirect URLs (see SUPABASE_AUTH_SETUP.md) or use email/password / magic link.");
-    } else if (err === "no_code" || err === "config") {
+    } else if (err === "no_code") {
+      setError("Google or Microsoft sent you back without a sign-in code. Add your app’s callback URL to Supabase → Authentication → URL Configuration → Redirect URLs (e.g. https://nvc-slot-manager.vercel.app/**). See SUPABASE_AUTH_SETUP.md.");
+    } else if (err === "config") {
       setError("Sign-in could not complete. Check that NEXT_PUBLIC_APP_URL and Supabase env vars are set in Vercel (see SUPABASE_AUTH_SETUP.md).");
     }
   }, [searchParams]);
@@ -189,9 +191,6 @@ export function AdminLoginForm() {
           {oauthLoading === "azure" ? "…" : "Microsoft / Outlook"}
         </button>
       </div>
-      <p className="text-xs text-[var(--muted)]">
-        After choosing your account you should be redirected back and signed in. If nothing happens, see SUPABASE_AUTH_SETUP.md (Outlook/Microsoft).
-      </p>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

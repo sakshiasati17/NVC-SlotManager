@@ -35,16 +35,20 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
    ```text
    https://nvc-slot-manager.vercel.app/**
    ```
-   or more specifically:
+   The app uses the client page `/auth/callback` (so the code can be read from the URL even when Supabase puts it in the hash). So this URL must be allowed:
    ```text
-   https://nvc-slot-manager.vercel.app/api/auth/callback
+   https://nvc-slot-manager.vercel.app/auth/callback
    ```
    Also keep localhost if you use it:
    ```text
    http://localhost:3000/**
    ```
 
+   **Note:** Vercel preview deployments (e.g. `https://nvc-slot-manager-xxx-xxx.vercel.app`) have different URLs. If you want to test OAuth on preview deployments, add each preview URL to **Redirect URLs** (or use a wildcard pattern if Supabase supports it). For production, use your main production URL.
+
 Save. If the redirect URL the app sends does not match an entry here, Google/Microsoft login will fail or users will not return to your app.
+
+**If you see “Sign-in link was incomplete” or “sent you back without a sign-in code”** (e.g. with saas9993@colorado.edu after choosing Google/Microsoft): the browser came back to your app but the URL had no `code`. Almost always this means **Redirect URLs** above is missing your production URL. Add `https://nvc-slot-manager.vercel.app/**`, save, then try again (use an incognito window if needed).
 
 ---
 
