@@ -56,4 +56,5 @@ INSERT INTO allowed_admins (email) VALUES ('hickorys@colorado.edu') ON CONFLICT 
 INSERT INTO allowed_admins (email) VALUES ('Zoe.Unsell@colorado.edu') ON CONFLICT (email) DO NOTHING;
 INSERT INTO allowed_admins (email) VALUES ('Dahni.Austin@colorado.edu') ON CONFLICT (email) DO NOTHING;
 INSERT INTO allowed_admins (email) VALUES ('Leah.Shafer@Colorado.EDU') ON CONFLICT (email) DO NOTHING;
+INSERT INTO allowed_admins (email) VALUES ('shaferl@colorado.edu') ON CONFLICT (email) DO NOTHING;
 INSERT INTO allowed_admins (email) VALUES ('Karen.Reid@colorado.edu') ON CONFLICT (email) DO NOTHING;

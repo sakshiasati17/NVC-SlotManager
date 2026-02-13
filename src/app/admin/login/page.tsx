@@ -19,6 +19,11 @@ export default async function AdminLoginPage() {
           <span className="text-[var(--muted)]">·</span>
           <Link href="/" className="text-sm text-[var(--accent)] hover:underline">Back to home</Link>
         </p>
+        <p className="mt-2 text-center">
+          <a href="/api/auth/status" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--muted)] hover:underline">
+            Auth not working? Check setup
+          </a>
+        </p>
       </div>
     </div>
   );

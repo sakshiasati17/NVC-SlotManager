@@ -8,13 +8,20 @@ export async function GET(request: Request) {
   const next = searchParams.get("next") ?? "/admin";
 
   if (!code) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    const base = new URL(request.url).origin;
+    const url = new URL("/login", base);
+    url.searchParams.set("error", "no_code");
+    return NextResponse.redirect(url);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    console.error("[Auth] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY in environment");
+    const base = new URL(request.url).origin;
+    const url = new URL("/login", base);
+    url.searchParams.set("error", "config");
+    return NextResponse.redirect(url);
   }
 
   const cookieStore = await cookies();
@@ -37,8 +44,15 @@ export async function GET(request: Request) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    console.error("[Auth] exchangeCodeForSession failed:", error.message, { code: code?.slice(0, 20) });
+    const base = new URL(request.url).origin;
+    const to = next.startsWith("/admin") ? "/admin/login" : "/login";
+    const url = new URL(to, base);
+    url.searchParams.set("error", "signin_failed");
+    return NextResponse.redirect(url);
   }
 
-  return NextResponse.redirect(new URL(next, request.url));
+  const origin = new URL(request.url).origin;
+  const destination = next.startsWith("/") ? `${origin}${next}` : `${origin}/${next}`;
+  return NextResponse.redirect(destination);
 }

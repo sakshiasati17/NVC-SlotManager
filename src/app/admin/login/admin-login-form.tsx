@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const redirectTo = () => {
@@ -12,6 +12,7 @@ const redirectTo = () => {
 
 export function AdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -21,6 +22,15 @@ export function AdminLoginForm() {
   const [signUpSuccess, setSignUpSuccess] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "signin_failed") {
+      setError("Sign-in with Google or Microsoft did not complete. Check Supabase redirect URLs (see SUPABASE_AUTH_SETUP.md) or use email/password / magic link.");
+    } else if (err === "no_code" || err === "config") {
+      setError("Sign-in could not complete. Check that NEXT_PUBLIC_APP_URL and Supabase env vars are set in Vercel (see SUPABASE_AUTH_SETUP.md).");
+    }
+  }, [searchParams]);
 
   async function handleEmailPassword(e: React.FormEvent) {
     e.preventDefault();
@@ -34,34 +44,48 @@ export function AdminLoginForm() {
       return;
     }
     setLoading(true);
-    const supabase = createClient();
-    if (isSignUp) {
-      const { data, error: err } = await supabase.auth.signUp({ email, password });
+    try {
+      const supabase = createClient();
+      if (isSignUp) {
+        const { data, error: err } = await supabase.auth.signUp({ email, password });
+        setLoading(false);
+        if (err) {
+          const msg = err.message.toLowerCase();
+          const hint = msg.includes("signup") && msg.includes("disabled")
+            ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
+            : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
+            ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+            : err.message;
+          setError(hint);
+          return;
+        }
+        if (data?.session) {
+          router.push("/admin");
+          router.refresh();
+          return;
+        }
+        setError(null);
+        setSignUpSuccess(true);
+        setIsSignUp(false);
+        setPassword("");
+        setConfirmPassword("");
+        return;
+      }
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
       if (err) {
-        setError(err.message);
+        const msg = err.message.toLowerCase().includes("invalid login credentials")
+          ? "No account with this email and password. Try Sign up to create one, or use Google / Microsoft / magic link below."
+          : err.message;
+        setError(msg);
         return;
       }
-      if (data?.session) {
-        router.push("/admin");
-        router.refresh();
-        return;
-      }
-      setError(null);
-      setSignUpSuccess(true);
-      setIsSignUp(false);
-      setPassword("");
-      setConfirmPassword("");
-      return;
+      router.push("/admin");
+      router.refresh();
+    } catch (err) {
+      setLoading(false);
+      setError(err instanceof Error ? err.message : "Sign in failed. See SUPABASE_AUTH_SETUP.md or contact the site admin.");
     }
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (err) {
-      setError(err.message);
-      return;
-    }
-    router.push("/admin");
-    router.refresh();
   }
 
   async function handleMagicLink() {
@@ -71,29 +95,67 @@ export function AdminLoginForm() {
     }
     setError(null);
     setLoading(true);
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: redirectTo() || (typeof window !== "undefined" ? window.location.origin : "") + "/admin" },
-    });
-    setLoading(false);
-    if (err) {
-      setError(err.message);
-      return;
+    try {
+      const supabase = createClient();
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: redirectTo() || (typeof window !== "undefined" ? window.location.origin : "") + "/admin" },
+      });
+      setLoading(false);
+      if (err) {
+        const msg = err.message.toLowerCase();
+        const hint = msg.includes("signup") && msg.includes("disabled")
+          ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
+          : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
+          ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+          : err.message;
+        setError(hint);
+        return;
+      }
+      setMagicLinkSent(true);
+    } catch (err) {
+      setLoading(false);
+      const raw = err instanceof Error ? err.message : "Could not send magic link. See SUPABASE_AUTH_SETUP.md.";
+      const msg = raw.toLowerCase();
+      const hint = msg.includes("signup") && msg.includes("disabled")
+        ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
+        : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
+        ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+        : raw;
+      setError(hint);
     }
-    setMagicLinkSent(true);
   }
 
   async function handleOAuth(provider: "google" | "azure") {
     setError(null);
     setOauthLoading(provider);
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: redirectTo() },
-    });
-    setOauthLoading(null);
-    if (err) setError(err.message);
+    try {
+      const supabase = createClient();
+      const { error: err } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: redirectTo() },
+      });
+      setOauthLoading(null);
+      if (err) {
+        const msg = err.message.toLowerCase();
+        const hint = msg.includes("signup") && msg.includes("disabled")
+          ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
+          : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
+          ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+          : err.message;
+        setError(hint);
+      }
+    } catch (err) {
+      setOauthLoading(null);
+      const raw = err instanceof Error ? err.message : "Could not start sign-in. See SUPABASE_AUTH_SETUP.md.";
+      const msg = raw.toLowerCase();
+      const hint = msg.includes("signup") && msg.includes("disabled")
+        ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
+        : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
+        ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+        : raw;
+      setError(hint);
+    }
   }
 
   if (magicLinkSent) {
@@ -108,7 +170,7 @@ export function AdminLoginForm() {
     <div className="space-y-4">
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {/* Google & Microsoft */}
+      {/* Google & Microsoft – same as signup: pick account then you're signed in (or signed up) */}
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
@@ -127,6 +189,9 @@ export function AdminLoginForm() {
           {oauthLoading === "azure" ? "…" : "Microsoft / Outlook"}
         </button>
       </div>
+      <p className="text-xs text-[var(--muted)]">
+        After choosing your account you should be redirected back and signed in. If nothing happens, see SUPABASE_AUTH_SETUP.md (Outlook/Microsoft).
+      </p>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">

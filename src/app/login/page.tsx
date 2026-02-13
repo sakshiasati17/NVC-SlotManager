@@ -37,6 +37,11 @@ export default async function LoginPage({
             ← Back
           </Link>
         </p>
+        <p className="mt-2 text-center">
+          <a href="/api/auth/status" target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--muted)] hover:underline">
+            Auth not working? Check setup
+          </a>
+        </p>
       </div>
     </div>
   );
