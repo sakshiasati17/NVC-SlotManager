@@ -11,10 +11,46 @@ function getCodeFromHash(): string | null {
   return params.get("code");
 }
 
+/** Parse error info from URL query string OR hash (Supabase sends errors in both). */
+function getErrorInfo(searchParams: URLSearchParams): { error: string; description: string } | null {
+  // Check query string first
+  let error = searchParams.get("error");
+  let description = searchParams.get("error_description");
+
+  // Also check hash fragment (Supabase may duplicate errors there)
+  if (!error && typeof window !== "undefined" && window.location.hash) {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    error = hashParams.get("error");
+    description = hashParams.get("error_description");
+  }
+
+  if (!error) return null;
+  return { error, description: description || error };
+}
+
+/** Turn Supabase error descriptions into user-friendly messages. */
+function friendlyErrorMessage(description: string): string {
+  const lower = description.toLowerCase();
+
+  if (lower.includes("unable to exchange external code")) {
+    return "Microsoft / Azure sign-in failed: Supabase could not exchange the authorization code from Microsoft. This usually means the Azure client secret in Supabase is expired or wrong. Go to Supabase → Authentication → Providers → Azure and update the Client Secret with a new one from Azure App Registration → Certificates & secrets.";
+  }
+  if (lower.includes("provider is not enabled")) {
+    return "This sign-in provider is not enabled. Go to Supabase → Authentication → Providers and enable it.";
+  }
+  if (lower.includes("redirect") || lower.includes("mismatch")) {
+    return "Redirect URL mismatch. Make sure your app URL (with /**) is listed in Supabase → Authentication → URL Configuration → Redirect URLs.";
+  }
+
+  // Default: show the raw description
+  return description;
+}
+
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "done" | "error">("loading");
+  const [errorInfo, setErrorInfo] = useState<{ message: string; raw: string } | null>(null);
   const [noCodeDebug, setNoCodeDebug] = useState<{ url: string; origin: string } | null>(null);
   const didRun = useRef(false);
 
@@ -23,6 +59,18 @@ function AuthCallbackInner() {
     didRun.current = true;
 
     const next = searchParams.get("next") ?? "/";
+    const loginPage = next.startsWith("/admin") ? "/admin/login" : "/login";
+
+    // ── 1. Check for error params from Supabase (OAuth failure) ──
+    const supabaseError = getErrorInfo(searchParams);
+    if (supabaseError) {
+      const message = friendlyErrorMessage(supabaseError.description);
+      setErrorInfo({ message, raw: supabaseError.description });
+      setStatus("error");
+      return;
+    }
+
+    // ── 2. Try to exchange auth code for session ──
     const codeFromQuery = searchParams.get("code");
     const codeFromHash = getCodeFromHash();
     const code = codeFromQuery || codeFromHash;
@@ -32,8 +80,7 @@ function AuthCallbackInner() {
         setNoCodeDebug({ url: window.location.href, origin: window.location.origin });
         setStatus("done");
       }
-      const to = next.startsWith("/admin") ? "/admin/login" : "/login";
-      if (!showDebug) router.replace(`${to}?error=${err}`);
+      if (!showDebug) router.replace(`${loginPage}?error=${err}`);
     };
 
     if (code) {
@@ -52,6 +99,7 @@ function AuthCallbackInner() {
       return;
     }
 
+    // ── 3. No code – maybe session already exists ──
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -63,6 +111,30 @@ function AuthCallbackInner() {
     });
   }, [router, searchParams]);
 
+  // ── Error from Supabase (e.g. Azure code exchange failure) ──
+  if (errorInfo) {
+    const loginPage = searchParams.get("next")?.startsWith("/admin") ? "/admin/login" : "/login";
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4 text-center">
+        <p className="text-[var(--foreground)] font-medium mb-2">Sign-in failed</p>
+        <p className="text-sm text-red-600 mb-4 max-w-lg">
+          {errorInfo.message}
+        </p>
+        <details className="text-xs text-[var(--muted)] mb-4 max-w-lg">
+          <summary className="cursor-pointer hover:underline">Technical details</summary>
+          <p className="mt-1 break-all">{errorInfo.raw}</p>
+        </details>
+        <a
+          href={loginPage}
+          className="text-sm text-[var(--accent)] hover:underline"
+        >
+          ← Back to login
+        </a>
+      </div>
+    );
+  }
+
+  // ── No code received (redirect URL not configured) ──
   if (noCodeDebug) {
     return (
       <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center px-4 text-center">

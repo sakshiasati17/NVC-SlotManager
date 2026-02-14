@@ -7,6 +7,18 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/admin";
 
+  // Supabase may return error params instead of a code (e.g. Azure OAuth failure)
+  const errorParam = searchParams.get("error");
+  const errorDesc = searchParams.get("error_description");
+  if (errorParam) {
+    const base = new URL(request.url).origin;
+    const to = next.startsWith("/admin") ? "/admin/login" : "/login";
+    const url = new URL(to, base);
+    url.searchParams.set("error", "signin_failed");
+    if (errorDesc) url.searchParams.set("detail", errorDesc.slice(0, 200));
+    return NextResponse.redirect(url);
+  }
+
   if (!code) {
     const base = new URL(request.url).origin;
     const to = next.startsWith("/admin") ? "/admin/login" : "/login";

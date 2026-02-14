@@ -26,8 +26,10 @@ export function AdminLoginForm() {
 
   useEffect(() => {
     const err = searchParams.get("error");
+    const detail = searchParams.get("detail");
     if (err === "signin_failed") {
-      setError("Sign-in with Google or Microsoft did not complete. Check Supabase redirect URLs (see SUPABASE_AUTH_SETUP.md) or use email/password / magic link.");
+      const extra = detail ? ` (${detail})` : "";
+      setError(`Sign-in with Google or Microsoft did not complete${extra}. Check Supabase redirect URLs (see SUPABASE_AUTH_SETUP.md) or use email/password / magic link.`);
     } else if (err === "no_code") {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const redirectHint = origin
@@ -61,8 +63,8 @@ export function AdminLoginForm() {
           const hint = msg.includes("signup") && msg.includes("disabled")
             ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
             : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
-            ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
-            : err.message;
+              ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+              : err.message;
           setError(hint);
           return;
         }
@@ -114,8 +116,8 @@ export function AdminLoginForm() {
         const hint = msg.includes("signup") && msg.includes("disabled")
           ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
           : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
-          ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
-          : err.message;
+            ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+            : err.message;
         setError(hint);
         return;
       }
@@ -127,8 +129,8 @@ export function AdminLoginForm() {
       const hint = msg.includes("signup") && msg.includes("disabled")
         ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
         : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
-        ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
-        : raw;
+          ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+          : raw;
       setError(hint);
     }
   }
@@ -148,8 +150,8 @@ export function AdminLoginForm() {
         const hint = msg.includes("signup") && msg.includes("disabled")
           ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
           : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
-          ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
-          : err.message;
+            ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+            : err.message;
         setError(hint);
       }
     } catch (err) {
@@ -159,8 +161,8 @@ export function AdminLoginForm() {
       const hint = msg.includes("signup") && msg.includes("disabled")
         ? "Signup is disabled. Ask the site admin to enable Email provider in Supabase → Authentication → Providers → Email."
         : msg.includes("invalid") && (msg.includes("key") || msg.includes("api"))
-        ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
-        : raw;
+          ? "Auth configuration error. Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in Vercel (see SUPABASE_AUTH_SETUP.md)."
+          : raw;
       setError(hint);
     }
   }
