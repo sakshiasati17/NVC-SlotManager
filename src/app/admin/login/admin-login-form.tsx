@@ -140,9 +140,14 @@ export function AdminLoginForm() {
     setOauthLoading(provider);
     try {
       const supabase = createClient();
+      const oauthOptions: Record<string, unknown> = { redirectTo: redirectTo() };
+      // Azure needs explicit scopes to return user email
+      if (provider === "azure") {
+        oauthOptions.scopes = "openid email profile";
+      }
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: redirectTo() },
+        options: oauthOptions,
       });
       setOauthLoading(null);
       if (err) {
