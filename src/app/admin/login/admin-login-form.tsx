@@ -7,8 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 const redirectTo = () => {
   if (typeof window === "undefined") return "";
   const origin = window.location.origin;
-  // Client callback reads code from query OR hash (Supabase may use either).
-  return `${origin}/auth/callback?next=/admin`;
+  // Server-side route handler exchanges code and sets HTTP-only cookies.
+  return `${origin}/api/auth/callback?next=/admin`;
 };
 
 export function AdminLoginForm() {

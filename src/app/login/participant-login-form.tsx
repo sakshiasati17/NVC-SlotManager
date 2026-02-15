@@ -11,8 +11,8 @@ export function ParticipantLoginForm({ redirectTo }: { redirectTo: string }) {
   const callbackUrl = () => {
     if (typeof window === "undefined") return "";
     const origin = window.location.origin;
-    // Client callback reads code from query OR hash (Supabase may use either).
-    return `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+    // Server-side route handler exchanges code and sets HTTP-only cookies.
+    return `${origin}/api/auth/callback?next=${encodeURIComponent(nextPath)}`;
   };
 
   const [email, setEmail] = useState("");
